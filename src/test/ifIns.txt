@@ -1,0 +1,31 @@
+const i:int = 10;
+let j:int=i;
+fn foo(x:int, y:int) ->int{
+    x = 1;
+    const i:int = x;
+    if 1>2 {
+        let x:int;
+        if 1{
+            let y:double;
+            x = 2;
+            y = 5.2;
+        }
+        else if 2{
+            x = 1;
+        }
+        else {
+            x = 5;
+        }
+    }
+    return 1;
+}
+fn main() -> int{
+    foo(1, 1)+1;
+    "abc";
+    1+1+i+5;
+    i;
+    j = 50;
+    let k:int = 1;
+    k;
+    return 1;
+}

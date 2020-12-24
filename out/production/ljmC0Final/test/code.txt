@@ -1,0 +1,16 @@
+fn let	const
+as while if       abc    id   else
+return
+break continue
+125000
+1.265
+1.24581e10
+1.34e+15
+1.28e-6
+1.58e2
+"sadsad" //asdh 123 45.285e20
++-*/   < > <= >= != ( ) { }  ->    ,   ;   :
+abec  //sjkahdshashadjkhas
+abces 124 3.2;
+"sbaj kdh\n\r\t\\ \" \'sd"
+'a'  '\\'  '\"'  '\''    '\r'  '\t'  '\n'  abc

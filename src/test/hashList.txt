@@ -1,0 +1,15 @@
+let result: int = fib(x - 1);
+let resul: int = fib(x - 1);
+let reslt: int = fib(x - 1);
+let resut: int = fib(x - 1);
+let reult: int = fib(x - 1);
+let rsult: int = fib(x - 1);
+let esult: int = fib(x - 1);
+let resu: int = fib(x - 1);
+let rest: int = fib(x - 1);
+let relt: int = fib(x - 1);
+let rult: int = fib(x - 1);
+let sult: int = fib(x - 1);
+let res: int = fib(x - 1);
+let ret: int = fib(x - 1);
+
