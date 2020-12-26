@@ -2,13 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="34422e65-17fa-4c7c-a738-98aaac9a79b2" name="默认更改列表" comment="">
-      <change afterPath="$PROJECT_DIR$/src/analyser/Analyser.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/analyser/Func.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/analyser/GlobalVar.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/analyser/Symbol.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/instruction/Instruction.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/instruction/Operation.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/test/test.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/analyser/Analyser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/analyser/Analyser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/analyser/GlobalVar.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/test.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,7 +41,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/src" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/analyser" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -59,10 +57,28 @@
       <recent name="utils" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\buaa\2020autumn\编译原理与技术\大作业\ljmC0Final\src\analyser" />
       <recent name="D:\buaa\2020autumn\编译原理与技术\大作业\ljmC0Final\src" />
+      <recent name="D:\buaa\2020autumn\编译原理与技术\大作业\ljmC0Final" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="JUnit.test.simpleCompile">
+    <configuration name="test.simpleCompile" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="ljmC0Final" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="test" />
+      <option name="MAIN_CLASS_NAME" value="test.test" />
+      <option name="METHOD_NAME" value="simpleCompile" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="test.tokenizer" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="ljmC0Final" />
       <extension name="coverage">
@@ -81,6 +97,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.test.simpleCompile" />
         <item itemvalue="JUnit.test.tokenizer" />
       </list>
     </recent_temporary>
@@ -96,7 +113,7 @@
       <option name="presentableId" value="Default" />
       <updated>1608808029626</updated>
       <workItem from="1608808031532" duration="3967000" />
-      <workItem from="1608819840985" duration="7357000" />
+      <workItem from="1608819840985" duration="8415000" />
     </task>
     <servers />
   </component>
@@ -104,10 +121,10 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser" timestamp="1608823774208">
+    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser" timestamp="1608954115021">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser/0.0.1200.760@0.0.1200.760" timestamp="1608823774208" />
+    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser/0.0.1200.760@0.0.1200.760" timestamp="1608954115021" />
     <state x="490" y="311" key="#com.intellij.refactoring.move.MoveHandler.SelectRefactoringDialog" timestamp="1608808062961">
       <screen x="0" y="0" width="1200" height="760" />
     </state>

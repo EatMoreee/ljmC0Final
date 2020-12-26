@@ -1,16 +1,9 @@
 package analyser;
 
-import error.AnalyzeError;
-import error.CompileError;
-import error.ErrorCode;
-import error.ExpectedTokenError;
-import error.TokenizeError;
-import instruction.Instruction;
-import instruction.InstructionEntry;
-import tokenizer.Token;
-import tokenizer.TokenType;
-import tokenizer.Tokenizer;
-import util.Pos;
+import error.*;
+import instruction.*;
+import tokenizer.*;
+import util.*;
 
 import java.util.*;
 
@@ -33,7 +26,7 @@ public final class Analyser {
     }
 
     /** 符号表 */
-    HashMap<String, Symbol> symbolTable = new HashMap<>();
+    HashMap<String, SymbolEntry> symbolTable = new HashMap<>();
 
     //索引表
     HashMap<String, Integer> funcIndex = new HashMap<>();
@@ -50,23 +43,23 @@ public final class Analyser {
     }
 
     public void initSymbolTable(){
-        this.symbolTable.put("getint", new Symbol("func", "int", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
+        this.symbolTable.put("getint", new SymbolEntry("func", "int", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
         funcIndex.put("getint", 0);
-        this.symbolTable.put("getdouble", new Symbol("func", "double", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
+        this.symbolTable.put("getdouble", new SymbolEntry("func", "double", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
         funcIndex.put("getdouble", 1);
-        this.symbolTable.put("getchar", new Symbol("func", "int", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
+        this.symbolTable.put("getchar", new SymbolEntry("func", "int", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
         funcIndex.put("getchar", 2);
-        this.symbolTable.put("putint", new Symbol("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
+        this.symbolTable.put("putint", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
         funcIndex.put("putint", 3);
-        this.symbolTable.put("putdouble", new Symbol("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
+        this.symbolTable.put("putdouble", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
         funcIndex.put("putdouble", 4);
-        this.symbolTable.put("putchar", new Symbol("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
+        this.symbolTable.put("putchar", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
         funcIndex.put("putchar", 5);
-        this.symbolTable.put("putstr", new Symbol("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
+        this.symbolTable.put("putstr", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
         funcIndex.put("putstr", 6);
-        this.symbolTable.put("putln", new Symbol("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
+        this.symbolTable.put("putln", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
         funcIndex.put("putln", 7);
-        this.symbolTable.put("_start", new Symbol("func", "void", new InstructionEntry[1000], 0, true, true, getNextVariableOffset()));
+        this.symbolTable.put("_start", new SymbolEntry("func", "void", new InstructionEntry[1000], 0, true, true, getNextVariableOffset()));
         funcIndex.put("_start", 8);
     }
 
@@ -83,7 +76,7 @@ public final class Analyser {
         return instructions;
     }
 
-    public HashMap<String, Symbol> getSymbolTable(){
+    public HashMap<String, SymbolEntry> getSymbolTable(){
         return this.symbolTable;
     }
 
@@ -184,28 +177,28 @@ public final class Analyser {
         while(iter.hasNext()){
             HashMap.Entry entry = (HashMap.Entry)iter.next();
             String name1 = entry.getKey().toString();
-            Symbol symbolEntry1 = (Symbol) entry.getValue();
+            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
             //SymbolEntry symbolEntry = symbolTable.get(symbolEntryIterator.next());
             //System.out.print(String.format("%s %s %d\n", name, symbolEntry.getType(), symbolEntry.getLayer()));
             if(name1.equals(name) && symbolEntry1.getLayer() == layer){
                 throw new AnalyzeError(ErrorCode.DuplicateDeclaration,curPos);
             }
         }
-        this.symbolTable.put(name, new Symbol(type, layer, isConstant, isInitialized, getNextVariableOffset()));
+        this.symbolTable.put(name, new SymbolEntry(type, layer, isConstant, isInitialized, getNextVariableOffset()));
     }
     private void addSymbol(String name, String type, String returnType, int layer, boolean isInitialized, boolean isConstant, Pos curPos) throws AnalyzeError {
         Iterator iter = symbolTable.entrySet().iterator();
         while(iter.hasNext()){
             HashMap.Entry entry = (HashMap.Entry)iter.next();
             String name1 = entry.getKey().toString();
-            Symbol symbolEntry1 = (Symbol) entry.getValue();
+            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
             //SymbolEntry symbolEntry = symbolTable.get(symbolEntryIterator.next());
             //System.out.print(String.format("%s %s %d\n", name, symbolEntry.getType(), symbolEntry.getLayer()));
             if(name1.equals(name) && symbolEntry1.getLayer() <= layer){
                 throw new AnalyzeError(ErrorCode.DuplicateDeclaration,curPos);
             }
         }
-        this.symbolTable.put(name, new Symbol(type, returnType, layer, isConstant, isInitialized, getNextVariableOffset()));
+        this.symbolTable.put(name, new SymbolEntry(type, returnType, layer, isConstant, isInitialized, getNextVariableOffset()));
     }
 
     /**
@@ -288,7 +281,7 @@ public final class Analyser {
         while(iter.hasNext()){
             HashMap.Entry entry = (HashMap.Entry)iter.next();
             String name1 = entry.getKey().toString();
-            Symbol symbolEntry1 = (Symbol) entry.getValue();
+            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
             if(name1.equals(name)){
                 return i;
             }
@@ -298,14 +291,14 @@ public final class Analyser {
     }
 
     private void initStart(){
-        Symbol startEntry = symbolTable.get("_start");
+        SymbolEntry startEntry = symbolTable.get("_start");
         Iterator iter = symbolTable.entrySet().iterator();
         int j = startEntry.getInstructionLen();
         InstructionEntry[] instructionEntries = startEntry.getInstructions();
         while(iter.hasNext()){
             HashMap.Entry entry = (HashMap.Entry)iter.next();
             String name1 = entry.getKey().toString();
-            Symbol symbolEntry1 = (Symbol) entry.getValue();
+            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
             if(symbolEntry1.getType().equals("func") && name1.equals("main")){
                 InstructionEntry instructionEntry4 = new InstructionEntry("stackalloc", 0);
                 InstructionEntry instructionEntry = new InstructionEntry("call", funcIndex.get(name1) - 8);
@@ -313,7 +306,7 @@ public final class Analyser {
                 instructionEntries[j++] = instructionEntry;
             }
         }
-        Symbol start = symbolTable.get("_start");
+        SymbolEntry start = symbolTable.get("_start");
         start.setInstructions(instructionEntries);
         start.setInstructionLen(j);
     }
@@ -342,12 +335,12 @@ public final class Analyser {
         }
         String type = "func";
 //        addSymbol(name,  type, returnType, layer++,true, false, nameToken.getStartPos());
-        Symbol thisSymbol = symbolTable.get(name);
+        SymbolEntry thisSymbol = symbolTable.get(name);
         thisSymbol.setReturnType(returnType);
         funcIndex.put(name, findex++);
         analyseBlockStmt(name, false, 0, 0, 0);
         if(returnType.equals("void")){
-            Symbol function = symbolTable.get(name);
+            SymbolEntry function = symbolTable.get(name);
             InstructionEntry[] instructionEntries = function.getInstructions();
             int len = function.getInstructionLen();
             InstructionEntry instructionEntry1 = new InstructionEntry("ret");
@@ -361,7 +354,7 @@ public final class Analyser {
         while(iter.hasNext()){
             HashMap.Entry entry = (HashMap.Entry)iter.next();
             String varname = entry.getKey().toString();
-            Symbol symbolEntry = (Symbol) entry.getValue();
+            SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
             if(symbolEntry.getLayer() == currentLayer){
                 if(globaVarIndex.get(varname) != null){
                     symbolEntry.setLayer(0);
@@ -396,9 +389,9 @@ public final class Analyser {
         // 加入符号表
         String name = (String) nameToken.getValue();
         addSymbol(name, type, layer,true, isconst, nameToken.getStartPos());
-        Symbol thisSymbol = symbolTable.get(name);
+        SymbolEntry thisSymbol = symbolTable.get(name);
         thisSymbol.setParam(true);
-        Symbol function = symbolTable.get(funcName);
+        SymbolEntry function = symbolTable.get(funcName);
         HashMap<String, Integer> argVars = function.getArgVars();
         int argVarsCount = function.getArgVarCount();
         argVars.put(name, argVarsCount++);
@@ -489,9 +482,9 @@ public final class Analyser {
     }
     private void analyseReturnStmt(String funcName) throws CompileError{
         boolean isInt = false;
-        Symbol symbolEntry = symbolTable.get(funcName);
+        SymbolEntry symbolEntry = symbolTable.get(funcName);
         var nameToken = expect(TokenType.RETURN_KW);
-        Symbol function = symbolTable.get(funcName);
+        SymbolEntry function = symbolTable.get(funcName);
         InstructionEntry[] instructionEntries = function.getInstructions();
         //有返回值
         if(!check(TokenType.SEMICOLON)){
@@ -531,7 +524,7 @@ public final class Analyser {
     }
 
     private void insertInstru(String funcname, InstructionEntry instructionEntry, int pos){
-        Symbol function = symbolTable.get(funcname);
+        SymbolEntry function = symbolTable.get(funcname);
         InstructionEntry[] instructionEntries = function.getInstructions();
         int len = function.getInstructionLen();
         for(int i = len;i > pos;i--){
@@ -545,7 +538,7 @@ public final class Analyser {
 
     private void analyseWhileStmt(String funcName) throws CompileError{
         expect(TokenType.WHILE_KW);
-        Symbol function = symbolTable.get(funcName);
+        SymbolEntry function = symbolTable.get(funcName);
         InstructionEntry[] instructionEntries = function.getInstructions();
         int len = function.getInstructionLen();
         InstructionEntry instructionEntry1 = new InstructionEntry("br", 0);
@@ -571,7 +564,7 @@ public final class Analyser {
     }
     private void analyseIfStmt(String funcName, boolean isLoop, int loc4, int loc5, int elseLayer) throws CompileError{
         expect(TokenType.IF_KW);
-        Symbol function = symbolTable.get(funcName);
+        SymbolEntry function = symbolTable.get(funcName);
         analyseExpr(funcName);
         //loc1
         int loc1 = function.getInstructionLen();
@@ -612,7 +605,7 @@ public final class Analyser {
         if(isLoca){
             locaOrglob = "loca";
         }
-        Symbol function = symbolTable.get(funcName);
+        SymbolEntry function = symbolTable.get(funcName);
         InstructionEntry[] instructionEntries = function.getInstructions();
         int len = function.getInstructionLen();
         int locaVarCount = function.getLocaVarCount();
@@ -647,7 +640,7 @@ public final class Analyser {
     }
     private void analyseLetDeclStmt(String funcName, boolean isLoca) throws CompileError{
         boolean isInitialized = false;
-        Symbol function = symbolTable.get(funcName);
+        SymbolEntry function = symbolTable.get(funcName);
         expect(TokenType.LET_KW);
         var nameToken = expect(TokenType.IDENT);
         expect(TokenType.COLON);
@@ -719,7 +712,7 @@ public final class Analyser {
             next();
             analyseC(funcName);
 
-            Symbol function = symbolTable.get(funcName);
+            SymbolEntry function = symbolTable.get(funcName);
             InstructionEntry[] instructionEntries = function.getInstructions();
             int len = function.getInstructionLen();
             // 生成代码
@@ -789,7 +782,7 @@ public final class Analyser {
             // 运算符
             next();
             analyseT(funcName);
-            Symbol function = symbolTable.get(funcName);
+            SymbolEntry function = symbolTable.get(funcName);
             InstructionEntry[] instructionEntries = function.getInstructions();
             int len = function.getInstructionLen();
             // 生成代码
@@ -819,7 +812,7 @@ public final class Analyser {
             // 运算符
             next();
             analyseF(funcName);
-            Symbol function = symbolTable.get(funcName);
+            SymbolEntry function = symbolTable.get(funcName);
             InstructionEntry[] instructionEntries = function.getInstructions();
             int len = function.getInstructionLen();
             // 生成代码
@@ -854,7 +847,7 @@ public final class Analyser {
         }
         type = analyseI(funcName);
         for(int i = 0;i < minusCount;i++){
-            Symbol function = symbolTable.get(funcName);
+            SymbolEntry function = symbolTable.get(funcName);
             InstructionEntry[] instructionEntries = function.getInstructions();
             int len = function.getInstructionLen();
             // 生成代码
@@ -889,7 +882,7 @@ public final class Analyser {
                 //有参数
                 if(!check(TokenType.R_PAREN)){
                     hasParam = true;
-                    Symbol function = symbolTable.get(funcName);
+                    SymbolEntry function = symbolTable.get(funcName);
                     if(entry.getReturnType().equals("void")){
                         InstructionEntry[] instructionEntries = function.getInstructions();
                         int len = function.getInstructionLen();
@@ -912,7 +905,7 @@ public final class Analyser {
                 expect(TokenType.R_PAREN);
                 String returnType = entry.getReturnType();
                 if(returnType.equals("int") && !hasParam){
-                    Symbol function = symbolTable.get(funcName);
+                    SymbolEntry function = symbolTable.get(funcName);
                     InstructionEntry[] instructionEntries = function.getInstructions();
                     int len = function.getInstructionLen();
                     // 生成代码
@@ -930,7 +923,7 @@ public final class Analyser {
                     function.setInstructions(instructionEntries);
                 }
                 else if(returnType.equals("void") && !hasParam){
-                    Symbol function = symbolTable.get(funcName);
+                    SymbolEntry function = symbolTable.get(funcName);
                     InstructionEntry[] instructionEntries = function.getInstructions();
                     int len = function.getInstructionLen();
                     // 生成代码
@@ -948,7 +941,7 @@ public final class Analyser {
                     function.setInstructions(instructionEntries);
                 }
                 else{
-                    Symbol function = symbolTable.get(funcName);
+                    SymbolEntry function = symbolTable.get(funcName);
                     InstructionEntry[] instructionEntries = function.getInstructions();
                     int len = function.getInstructionLen();
                     // 生成代码
@@ -974,7 +967,7 @@ public final class Analyser {
                     throw new AnalyzeError(ErrorCode.AssignToConstant, nameToken.getStartPos());
                 }
                 expect(TokenType.ASSIGN);
-                Symbol function = symbolTable.get(funcName);
+                SymbolEntry function = symbolTable.get(funcName);
                 InstructionEntry[] instructionEntries = function.getInstructions();
                 int len = function.getInstructionLen();
                 // 生成代码
@@ -1019,7 +1012,7 @@ public final class Analyser {
             }
             //变量名
             else{
-                Symbol function = symbolTable.get(funcName);
+                SymbolEntry function = symbolTable.get(funcName);
                 InstructionEntry[] instructionEntries = function.getInstructions();
                 int len = function.getInstructionLen();
                 // 生成代码
@@ -1057,7 +1050,7 @@ public final class Analyser {
         }
         else if(check(TokenType.UINT_LITERAL)){
             var token = expect(TokenType.UINT_LITERAL);
-            Symbol function = symbolTable.get(funcName);
+            SymbolEntry function = symbolTable.get(funcName);
             InstructionEntry[] instructionEntries = function.getInstructions();
             int len = function.getInstructionLen();
             // 生成代码
@@ -1072,7 +1065,7 @@ public final class Analyser {
             String value = (String)token.getValue();
             //计算全局变量数
             int globalVarsNum = calcGlobalVars();
-            Symbol function = symbolTable.get(funcName);
+            SymbolEntry function = symbolTable.get(funcName);
             InstructionEntry[] instructionEntries = function.getInstructions();
             int len = function.getInstructionLen();
             // 生成代码
@@ -1086,7 +1079,7 @@ public final class Analyser {
         }
         else if(check(TokenType.CHAR_LITERAL)){
             var token = expect(TokenType.CHAR_LITERAL);
-            Symbol function = symbolTable.get(funcName);
+            SymbolEntry function = symbolTable.get(funcName);
             InstructionEntry[] instructionEntries = function.getInstructions();
             int len = function.getInstructionLen();
             // 生成代码
@@ -1125,11 +1118,14 @@ public final class Analyser {
         Iterator iter = symbolTable.entrySet().iterator();
         while(iter.hasNext()){
             HashMap.Entry entry = (HashMap.Entry)iter.next();
-            Symbol symbolEntry = (Symbol) entry.getValue();
+            SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
             if(!symbolEntry.getType().equals("func") && symbolEntry.getLayer() == 0){
                 globalVars++;
             }
         }
         return globalVars;
     }
+
+
+
 }
