@@ -1,11 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="34422e65-17fa-4c7c-a738-98aaac9a79b2" name="默认更改列表" comment="" />
+    <list default="true" id="34422e65-17fa-4c7c-a738-98aaac9a79b2" name="默认更改列表" comment="">
+      <change afterPath="$PROJECT_DIR$/src/analyser/Analyser.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/analyser/Func.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/analyser/GlobalVar.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/analyser/Symbol.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/instruction/Instruction.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/instruction/Operation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MavenImportPreferences">
     <option name="importingSettings">
@@ -17,6 +28,9 @@
     </option>
   </component>
   <component name="ProjectId" id="1m6JInmr1I7f6ESYZfl5dpYTDoG" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="1" id="添加" />
+  </component>
   <component name="ProjectViewState">
     <option name="showExcludedFiles" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -40,6 +54,8 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="analyser" />
+      <recent name="instruction" />
       <recent name="utils" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
@@ -80,7 +96,7 @@
       <option name="presentableId" value="Default" />
       <updated>1608808029626</updated>
       <workItem from="1608808031532" duration="3967000" />
-      <workItem from="1608819840985" duration="2245000" />
+      <workItem from="1608819840985" duration="7357000" />
     </task>
     <servers />
   </component>
@@ -88,10 +104,18 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
+    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser" timestamp="1608823774208">
+      <screen x="0" y="0" width="1200" height="760" />
+    </state>
+    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser/0.0.1200.760@0.0.1200.760" timestamp="1608823774208" />
     <state x="490" y="311" key="#com.intellij.refactoring.move.MoveHandler.SelectRefactoringDialog" timestamp="1608808062961">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
     <state x="490" y="311" key="#com.intellij.refactoring.move.MoveHandler.SelectRefactoringDialog/0.0.1200.760@0.0.1200.760" timestamp="1608808062961" />
+    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1608952968460">
+      <screen x="0" y="0" width="1200" height="760" />
+    </state>
+    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1200.760@0.0.1200.760" timestamp="1608952968460" />
     <state width="1157" height="161" key="GridCell.Tab.0.bottom" timestamp="1608822152279">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
