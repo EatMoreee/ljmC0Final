@@ -1,7 +1,8 @@
 package analyser;
 
+import instruction.*;
+
 import java.util.HashMap;
-import instruction.InstructionEntry;
 
 public class SymbolEntry {
     String type;
@@ -120,6 +121,7 @@ public class SymbolEntry {
         this.stackOffset = stackOffset;
         this.type = type;
         this.layer = layer;
+
     }
     public SymbolEntry(String type, String returnType, int layer, boolean isConstant, boolean isDeclared, int stackOffset) {
         this.isConstant = isConstant;

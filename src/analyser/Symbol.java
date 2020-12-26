@@ -1,191 +1,140 @@
 package analyser;
 
-import java.util.HashMap;
-import instruction.InstructionEntry;
+import tokenizer.Token;
+import tokenizer.TokenType;
+import util.Pos;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Symbol {
-    String type;
-    int layer;
-    boolean isConstant;
-    String returnType = null;
 
-    public InstructionEntry[] getInstructions() {
-        return instructions;
+    private Token token;
+
+    //    种类：简单变量var，函数func，参数param等
+    private String Kind;
+    //    类型：int，double，string,void
+    private TokenType Type;
+    //    值,如果是函数，则存其返回值
+    private Object value;
+    //如果是函数，则是参数类型
+    private ArrayList<TokenType> paramsType = new ArrayList<>();
+
+    // 是否为函数调用
+    private boolean isFuncCall = false;
+
+    // 链域
+    private int chain = 0;
+    // 序号位置
+    private int num = 0;
+
+    //如果是局部变量，他的id;如果不是，-1
+    private int localNum;
+
+    // 是否常量
+    private boolean isConstant;
+    // 是否有值
+    private boolean isInitialized;
+
+    private boolean isGlobal = false;
+
+    public boolean isGlobal() {
+        return isGlobal;
     }
 
-    public void setInstructions(InstructionEntry[] instrucions) {
-        this.instructions = instrucions;
+    public void setGlobal(boolean global) {
+        isGlobal = global;
     }
 
-    boolean isValid = true;
-    InstructionEntry[] instructions = new InstructionEntry[1000];
-    int instructionLen = 0;
-    int locaVarCount = 0;
-    int argVarCount = 1;
-    HashMap<String, Integer> localVars = new HashMap<>();
-    HashMap<String, Integer> argVars = new HashMap<>();
-    boolean isParam = false;
-
-    public int getArgVarCount() {
-        return argVarCount;
+    public Token getToken() {
+        return token;
     }
 
-    public void setArgVarCount(int argVarCount) {
-        this.argVarCount = argVarCount;
+    public void setToken(Token token) {
+        this.token = token;
     }
 
-    public HashMap<String, Integer> getArgVars() {
-        return argVars;
+    public String getKind() {
+        return Kind;
     }
 
-    public void setArgVars(HashMap<String, Integer> argVars) {
-        this.argVars = argVars;
+    public void setKind(String kind) {
+        Kind = kind;
     }
 
-    public boolean isParam() {
-        return isParam;
+    public TokenType getType() {
+        return Type;
     }
 
-    public void setParam(boolean param) {
-        isParam = param;
+
+    public void setType(TokenType type) {
+        Type = type;
     }
 
-    public HashMap<String, Integer> getLocalVars() {
-        return localVars;
+    public Object getValue() {
+        return value;
     }
 
-    public void setLocalVars(HashMap<String, Integer> localVars) {
-        this.localVars = localVars;
+    public void setValue(Object value) {
+        this.value = value;
     }
 
-    public int getLocaVarCount() {
-        return locaVarCount;
+    public ArrayList<TokenType> getParamsType() {
+        return paramsType;
     }
 
-    public void setLocaVarCount(int locaVarCount) {
-        this.locaVarCount = locaVarCount;
+    public void setParamsType(ArrayList<TokenType> paramsType) {
+        this.paramsType = paramsType;
     }
 
-    public int getInstructionLen() {
-        return instructionLen;
+    public boolean isFuncCall() {
+        return isFuncCall;
     }
 
-    public void setInstructionLen(int instructionLen) {
-        this.instructionLen = instructionLen;
+    public void setFuncCall(boolean funcCall) {
+        isFuncCall = funcCall;
     }
 
-    public boolean isValid() {
-        return isValid;
+    public int getChain() {
+        return chain;
     }
 
-    public void setValid(boolean valid) {
-        isValid = valid;
+    public void setChain(int chain) {
+        this.chain = chain;
     }
 
-    public String getReturnType() {
-        return returnType;
+    public int getNum() {
+        return num;
     }
 
-    public void setReturnType(String returnType) {
-        this.returnType = returnType;
+    public void setNum(int num) {
+        this.num = num;
     }
 
-    public String getType() {
-        return type;
+    public int getLocalNum() {
+        return localNum;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setLocalNum(int localNum) {
+        this.localNum = localNum;
     }
 
-    public int getLayer() {
-        return layer;
-    }
-
-    public void setLayer(int layer) {
-        this.layer = layer;
-    }
-
-    boolean isInitialized;
-    int stackOffset;
-
-    /**
-     * @param isConstant
-     * @param isDeclared
-     * @param stackOffset
-     */
-    public Symbol(String type, int layer, boolean isConstant, boolean isDeclared, int stackOffset) {
-        this.isConstant = isConstant;
-        this.isInitialized = isDeclared;
-        this.stackOffset = stackOffset;
-        this.type = type;
-        this.layer = layer;
-    }
-    public Symbol(String type, String returnType, int layer, boolean isConstant, boolean isDeclared, int stackOffset) {
-        this.isConstant = isConstant;
-        this.isInitialized = isDeclared;
-        this.stackOffset = stackOffset;
-        this.type = type;
-        this.layer = layer;
-        this.returnType = returnType;
-    }
-    public Symbol(String type, String returnType, InstructionEntry[] instructions, int layer, boolean isConstant, boolean isDeclared, int stackOffset) {
-        this.isConstant = isConstant;
-        this.isInitialized = isDeclared;
-        this.stackOffset = stackOffset;
-        this.type = type;
-        this.layer = layer;
-        this.returnType = returnType;
-        this.instructions = instructions;
-    }
-
-    /**
-     * @return the stackOffset
-     */
-    public int getStackOffset() {
-        return stackOffset;
-    }
-
-    /**
-     * @return the isConstant
-     */
     public boolean isConstant() {
         return isConstant;
     }
 
-    /**
-     * @return the isInitialized
-     */
+    public void setConstant(boolean constant) {
+        isConstant = constant;
+    }
+
     public boolean isInitialized() {
         return isInitialized;
     }
 
-    /**
-     * @param isConstant the isConstant to set
-     */
-    public void setConstant(boolean isConstant) {
-        this.isConstant = isConstant;
-    }
-
-    /**
-     * @param isInitialized the isInitialized to set
-     */
-    public void setInitialized(boolean isInitialized) {
-        this.isInitialized = isInitialized;
-    }
-
-    /**
-     * @param stackOffset the stackOffset to set
-     */
-    public void setStackOffset(int stackOffset) {
-        this.stackOffset = stackOffset;
+    public void setInitialized(boolean initialized) {
+        isInitialized = initialized;
     }
 }
-
-
-
-
-
 
 
 //package analyser;
@@ -197,6 +146,7 @@ public class Symbol {
 //import java.util.ArrayList;
 //
 //public class Symbol {
+//    private Token token;
 //
 ////    种类：简单变量var，函数func，参数param等
 //    private String kind;
@@ -230,6 +180,10 @@ public class Symbol {
 //    private boolean isInitialized;
 //
 //    private boolean isGlobal = false;
+//
+//    public Symbol(){
+//
+//    }
 //
 //
 //    public Symbol(String kind, TokenType type, int level, boolean isConstant, boolean isDeclared, int stackOffset) {

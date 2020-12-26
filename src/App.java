@@ -1,12 +1,11 @@
-import analyser.Global;
-
-import java.io.*;
-import java.util.*;
+import analyser.Analyser;
 import analyser.*;
 import error.*;
 import instruction.*;
 import tokenizer.*;
 
+import java.io.*;
+import java.util.*;
 
 public class App {
     public static void main(String[] args) throws IOException, CompileError {
@@ -18,11 +17,11 @@ public class App {
                 System.out.println(s);          //写出
             }
             in.close(); //关闭缓冲读入流及文件读入流的连接
-            }catch (FileNotFoundException e1){           //异常处理
-                e1.printStackTrace();
-            }catch(IOException e2){
-                e2.printStackTrace();
-            }
+        }catch (FileNotFoundException e1){           //异常处理
+            e1.printStackTrace();
+        }catch(IOException e2){
+            e2.printStackTrace();
+        }
         Global[] globals = new Global[1000];
         int globalCount = 0;
         Function[] functions = new Function[1000];
@@ -66,11 +65,11 @@ public class App {
         globalCount = top;
         System.out.println("全局变量表：");
         for(int i = 0;i < top;i++){
-            System.out.println(globals[i].getIsConst() + " " + globals[i].getValueCount() + " " + globals[i].getValueItem());
+            System.out.println(globals[i].isConst + " " + globals[i].valueCount + " " + globals[i].valueItem);
         }
         int funcTableTop = 0;
         for(int i = globalVarsEnd + 8;i < globalCount;i++){
-            String funcName = globals[i].getValueItem();
+            String funcName = globals[i].valueItem;
             SymbolEntry funcEntry = symbolTable.get(funcName);
             int ret_slots = 0;
             if(funcEntry.getReturnType().equals("int")){
@@ -90,9 +89,9 @@ public class App {
         functionCount = funcTableTop;
         System.out.println("函数表：");
         for(int i = 0;i < funcTableTop;i++){
-            System.out.println(functions[i].getNameLoc() + " " + functions[i].getRet_slots() + " " + functions[i].getParam_slots() + " " + functions[i].getLoc_slots() + " " + functions[i].getBody_count());
-            for(int j = 0;j < functions[i].getBody_count();j++){
-                System.out.println(functions[i].getInstructions()[j].getIns() + "(" + functions[i].getInstructions()[j].getOp() + ")");
+            System.out.println(functions[i].nameLoc + " " + functions[i].ret_slots + " " + functions[i].param_slots + " " + functions[i].loc_slots + " " + functions[i].body_count);
+            for(int j = 0;j < functions[i].body_count;j++){
+                System.out.println(functions[i].instructions[j].getIns() + "(" + functions[i].instructions[j].getOp() + ")");
             }
         }
         System.out.println(globalCount);
@@ -109,19 +108,19 @@ public class App {
         output.addAll(globalCountByte);
         for(int i = 0;i < globalCount;i++){
             //isConst
-            List<Byte> isConst=int2bytes(1, globals[i].getIsConst());
+            List<Byte> isConst=int2bytes(1, globals[i].isConst);
             output.addAll(isConst);
             // value count
             List<Byte> globalValueCountByte;
             //value items
             List<Byte> globalValueItemByte;
-            if(globals[i].getValueItem().equals("0")){
+            if(globals[i].valueItem.equals("0")){
                 globalValueCountByte = int2bytes(4, 8);
                 globalValueItemByte = long2bytes(8,0L);
             }
             else {
-                globalValueItemByte = String2bytes(globals[i].getValueItem());
-                globalValueCountByte = int2bytes(4, globals[i].getValueCount());
+                globalValueItemByte = String2bytes(globals[i].valueItem);
+                globalValueCountByte = int2bytes(4, globals[i].valueCount);
             }
             output.addAll(globalValueCountByte);
             output.addAll(globalValueItemByte);
@@ -132,23 +131,23 @@ public class App {
         //functions
         for(int i = 0;i < functionCount;i++){
             //name
-            List<Byte> name = int2bytes(4,functions[i].getNameLoc());
+            List<Byte> name = int2bytes(4,functions[i].nameLoc);
             output.addAll(name);
             //retSlots
-            List<Byte> retSlots = int2bytes(4,functions[i].getRet_slots());
+            List<Byte> retSlots = int2bytes(4,functions[i].ret_slots);
             output.addAll(retSlots);
             //paramsSlots;
-            List<Byte> paramsSlots=int2bytes(4,functions[i].getParam_slots());
+            List<Byte> paramsSlots=int2bytes(4,functions[i].param_slots);
             output.addAll(paramsSlots);
             //locSlots;
-            List<Byte> locSlots=int2bytes(4,functions[i].getLoc_slots());
+            List<Byte> locSlots=int2bytes(4,functions[i].loc_slots);
             output.addAll(locSlots);
             //bodyCount
-            List<Byte> bodyCount=int2bytes(4, functions[i].getBody_count());
+            List<Byte> bodyCount=int2bytes(4, functions[i].body_count);
             output.addAll(bodyCount);
             //instructions
-            for(int j = 0;j < functions[i].getBody_count();j++){
-                InstructionEntry instructionEntry = functions[i].getInstructions()[j];
+            for(int j = 0;j < functions[i].body_count;j++){
+                InstructionEntry instructionEntry = functions[i].instructions[j];
                 int intInstru = instruToInt(instructionEntry.getIns());
                 List<Byte> instruByte = int2bytes(1, intInstru);
                 output.addAll(instruByte);
@@ -285,4 +284,3 @@ public class App {
         return false;
     }
 }
-

@@ -1,7 +1,6 @@
 const magic: int = 1000000009;
 const magic2: int = 1919839;
 const min_temp: double = 0.001;
-
 const f_low: double = -2.0;
 const f_high: double = 2.0;
 

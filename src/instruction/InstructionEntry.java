@@ -27,4 +27,5 @@ public class InstructionEntry {
     public void setOp(int op) {
         this.op = op;
     }
+
 }
