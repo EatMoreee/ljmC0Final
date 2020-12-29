@@ -1,10 +1,14 @@
 package analyser;
 
-import instruction.*;
-import tokenizer.*;
 import error.*;
-import util.*;
+import instruction.Instruction;
+import instruction.InstructionEntry;
+import tokenizer.Token;
+import tokenizer.TokenType;
+import tokenizer.Tokenizer;
+import util.Pos;
 
+import javax.print.DocFlavor;
 import java.util.*;
 
 public final class Analyser {
@@ -12,58 +16,51 @@ public final class Analyser {
     Tokenizer tokenizer;
     ArrayList<Instruction> instructions;
 
-    /** 当前偷看的 token */
-    Token peekedToken = null;
+    //    全局变量表
+    ArrayList<String> globalVarList = new ArrayList<>();
+    //    全局函数表
+    ArrayList<String> funcList = new ArrayList<>();
 
-    //层次
-    int layer = 0;
-
-    //是否有main函数
-    boolean hasMain = false;
-
-    public boolean hasMain(){
-        return hasMain;
-    }
-
-    /** 符号表 */
+    /**
+     * 符号表
+     */
     HashMap<String, SymbolEntry> symbolTable = new HashMap<>();
 
-    //索引表
-    HashMap<String, Integer> funcIndex = new HashMap<>();
-    int findex = 9;
-    HashMap<String, Integer> globaVarIndex = new HashMap<>();
-    int vindex = 0;
 
-    public HashMap<String, Integer> getFuncIndex() {
-        return funcIndex;
-    }
+    int level = 0;
 
-    public void setFuncIndex(HashMap<String, Integer> funcIndex) {
-        this.funcIndex = funcIndex;
-    }
+    //    判断是否有一个名为 main 的函数作为程序入口
+    boolean hasMainFuc = false;
+    //    判断是否全部返回
+    boolean allReturn = false;
 
-    public void initSymbolTable(){
-        this.symbolTable.put("getint", new SymbolEntry("func", "int", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
-        funcIndex.put("getint", 0);
-        this.symbolTable.put("getdouble", new SymbolEntry("func", "double", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
-        funcIndex.put("getdouble", 1);
-        this.symbolTable.put("getchar", new SymbolEntry("func", "int", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
-        funcIndex.put("getchar", 2);
-        this.symbolTable.put("putint", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
-        funcIndex.put("putint", 3);
-        this.symbolTable.put("putdouble", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
-        funcIndex.put("putdouble", 4);
-        this.symbolTable.put("putchar", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
-        funcIndex.put("putchar", 5);
-        this.symbolTable.put("putstr", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
-        funcIndex.put("putstr", 6);
-        this.symbolTable.put("putln", new SymbolEntry("func", "void", new InstructionEntry[10], 0, true, true, getNextVariableOffset()));
-        funcIndex.put("putln", 7);
-        this.symbolTable.put("_start", new SymbolEntry("func", "void", new InstructionEntry[1000], 0, true, true, getNextVariableOffset()));
-        funcIndex.put("_start", 8);
-    }
+    public int[][] SymbolMatrix = {
+            //  *   /  +  -  >  <  >= <= == != as
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},// *
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},// /
+            {0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0},// +
+            {0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0},// -
+            {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0},// >
+            {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0},// <
+            {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0},// >=
+            {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0},// <=
+            {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0},// ==
+            {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0},// !=
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},// as
+    };
 
-    /** 下一个变量的栈偏移 */
+
+    /**
+     * 当前偷看的 token
+     */
+    Token peekedToken = null;
+    //    当前读到的token
+    Token currentToken = null;
+
+
+    /**
+     * 下一个变量的栈偏移
+     */
     int nextOffset = 0;
 
     public Analyser(Tokenizer tokenizer) {
@@ -76,9 +73,6 @@ public final class Analyser {
         return instructions;
     }
 
-    public HashMap<String, SymbolEntry> getSymbolTable(){
-        return this.symbolTable;
-    }
 
     /**
      * 查看下一个 Token
@@ -86,9 +80,11 @@ public final class Analyser {
      * @return
      * @throws TokenizeError
      */
-    private Token peek() throws TokenizeError {
+    public Token peek() throws TokenizeError {
         if (peekedToken == null) {
-            peekedToken = tokenizer.nextToken();
+            do {
+                peekedToken = tokenizer.nextToken();
+            } while (peekedToken.getTokenType().equals(TokenType.COMMENT));
         }
         return peekedToken;
     }
@@ -99,13 +95,15 @@ public final class Analyser {
      * @return
      * @throws TokenizeError
      */
-    private Token next() throws TokenizeError {
+    public Token next() throws TokenizeError {
         if (peekedToken != null) {
-            var token = peekedToken;
+            Token token = peekedToken;
             peekedToken = null;
+            currentToken = token;
             return token;
         } else {
-            return tokenizer.nextToken();
+            currentToken = tokenizer.nextToken();
+            return currentToken;
         }
     }
 
@@ -116,8 +114,12 @@ public final class Analyser {
      * @return
      * @throws TokenizeError
      */
-    private boolean check(TokenType tt) throws TokenizeError {
-        var token = peek();
+    public boolean check(TokenType tt) throws TokenizeError {
+        Token token = peek();
+        while (token.getTokenType() == TokenType.COMMENT) {
+            next();
+            token = peek();
+        }
         return token.getTokenType() == tt;
     }
 
@@ -128,8 +130,12 @@ public final class Analyser {
      * @return 如果匹配则返回这个 token，否则返回 null
      * @throws TokenizeError
      */
-    private Token nextIf(TokenType tt) throws TokenizeError {
-        var token = peek();
+    public Token nextIf(TokenType tt) throws TokenizeError {
+        Token token = peek();
+        while (token.getTokenType() == TokenType.COMMENT) {
+            next();
+            token = peek();
+        }
         if (token.getTokenType() == tt) {
             return next();
         } else {
@@ -144,9 +150,12 @@ public final class Analyser {
      * @return 这个 token
      * @throws CompileError 如果类型不匹配
      */
-    private Token expect(TokenType tt) throws CompileError {
-        var token = peek();
-        //System.out.println(token.getTokenType());
+    public Token expect(TokenType tt) throws CompileError {
+        Token token = peek();
+        while (token.getTokenType() == TokenType.COMMENT) {
+            next();
+            token = peek();
+        }
         if (token.getTokenType() == tt) {
             return next();
         } else {
@@ -159,7 +168,7 @@ public final class Analyser {
      *
      * @return
      */
-    private int getNextVariableOffset() {
+    public int getNextVariableOffset() {
         return this.nextOffset++;
     }
 
@@ -167,38 +176,25 @@ public final class Analyser {
      * 添加一个符号
      *
      * @param name          名字
+     * @param kind
+     * @param type
+     * @param level
      * @param isInitialized 是否已赋值
      * @param isConstant    是否是常量
      * @param curPos        当前 token 的位置（报错用）
      * @throws AnalyzeError 如果重复定义了则抛异常
      */
-    private void addSymbol(String name, String type, int layer, boolean isInitialized, boolean isConstant, Pos curPos) throws AnalyzeError {
+    public void addSymbol(String name, String kind, TokenType type, int level, boolean isConstant, boolean isInitialized, Pos curPos) throws AnalyzeError {
         Iterator iter = symbolTable.entrySet().iterator();
-        while(iter.hasNext()){
-            HashMap.Entry entry = (HashMap.Entry)iter.next();
+        while (iter.hasNext()) {
+            HashMap.Entry entry = (HashMap.Entry) iter.next();
             String name1 = entry.getKey().toString();
             SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
-            //SymbolEntry symbolEntry = symbolTable.get(symbolEntryIterator.next());
-            //System.out.print(String.format("%s %s %d\n", name, symbolEntry.getType(), symbolEntry.getLayer()));
-            if(name1.equals(name) && symbolEntry1.getLayer() == layer){
-                throw new AnalyzeError(ErrorCode.DuplicateDeclaration,curPos);
+            if (name1.equals(name) && symbolEntry1.getLevel() == level) {
+                throw new AnalyzeError(ErrorCode.DuplicateDeclaration, curPos);
             }
         }
-        this.symbolTable.put(name, new SymbolEntry(type, layer, isConstant, isInitialized, getNextVariableOffset()));
-    }
-    private void addSymbol(String name, String type, String returnType, int layer, boolean isInitialized, boolean isConstant, Pos curPos) throws AnalyzeError {
-        Iterator iter = symbolTable.entrySet().iterator();
-        while(iter.hasNext()){
-            HashMap.Entry entry = (HashMap.Entry)iter.next();
-            String name1 = entry.getKey().toString();
-            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
-            //SymbolEntry symbolEntry = symbolTable.get(symbolEntryIterator.next());
-            //System.out.print(String.format("%s %s %d\n", name, symbolEntry.getType(), symbolEntry.getLayer()));
-            if(name1.equals(name) && symbolEntry1.getLayer() <= layer){
-                throw new AnalyzeError(ErrorCode.DuplicateDeclaration,curPos);
-            }
-        }
-        this.symbolTable.put(name, new SymbolEntry(type, returnType, layer, isConstant, isInitialized, getNextVariableOffset()));
+        this.symbolTable.put(name, new SymbolEntry(kind, type, level, isConstant, isInitialized, getNextVariableOffset()));
     }
 
     /**
@@ -208,7 +204,7 @@ public final class Analyser {
      * @param curPos 当前位置（报错用）
      * @throws AnalyzeError 如果未定义则抛异常
      */
-    private void initializeSymbol(String name, Pos curPos) throws AnalyzeError {
+    public void initializeSymbol(String name, Pos curPos) throws AnalyzeError {
         var entry = this.symbolTable.get(name);
         if (entry == null) {
             throw new AnalyzeError(ErrorCode.NotDeclared, curPos);
@@ -225,7 +221,7 @@ public final class Analyser {
      * @return 栈偏移
      * @throws AnalyzeError
      */
-    private int getOffset(String name, Pos curPos) throws AnalyzeError {
+    public int getOffset(String name, Pos curPos) throws AnalyzeError {
         var entry = this.symbolTable.get(name);
         if (entry == null) {
             throw new AnalyzeError(ErrorCode.NotDeclared, curPos);
@@ -242,7 +238,7 @@ public final class Analyser {
      * @return 是否为常量
      * @throws AnalyzeError
      */
-    private boolean isConstant(String name, Pos curPos) throws AnalyzeError {
+    public boolean isConstant(String name, Pos curPos) throws AnalyzeError {
         var entry = this.symbolTable.get(name);
         if (entry == null) {
             throw new AnalyzeError(ErrorCode.NotDeclared, curPos);
@@ -251,441 +247,443 @@ public final class Analyser {
         }
     }
 
-    /**
-     * program -> decl_stmt* function*
-     */
-    private void analyseProgram() throws CompileError {
-        initSymbolTable();
-        while(!check(TokenType.EOF)){
-            if(check(TokenType.FN_KW)){
-                analyseFunction();
-            }
-            else if(check(TokenType.LET_KW)){
-                analyseLetDeclStmt("_start", false);
-            }
-            else if(check(TokenType.CONST_KW)){
-                analyseConstDeclStmt("_start", false);
-            }
-            else{
-                throw new ExpectedTokenError(List.of(TokenType.FN_KW, TokenType.LET_KW, TokenType.CONST_KW), next());
-            }
-        }
-        expect(TokenType.EOF);
-        initStart();
-        System.out.println("语法分析完成");
-    }
 
-    private int getIndexByName(String name){
-        Iterator iter = symbolTable.entrySet().iterator();
-        int i = 0;
-        while(iter.hasNext()){
-            HashMap.Entry entry = (HashMap.Entry)iter.next();
-            String name1 = entry.getKey().toString();
-            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
-            if(name1.equals(name)){
+    public int getGlobalIndex(String name) {
+        for (int i = 0; i < globalVarList.size(); i++) {
+            if (globalVarList.get(i).equals(name))
                 return i;
-            }
-            i++;
         }
         return -1;
     }
 
-    private void initStart(){
-        SymbolEntry startEntry = symbolTable.get("_start");
-        Iterator iter = symbolTable.entrySet().iterator();
-        int j = startEntry.getInstructionLen();
-        InstructionEntry[] instructionEntries = startEntry.getInstructions();
-        while(iter.hasNext()){
-            HashMap.Entry entry = (HashMap.Entry)iter.next();
-            String name1 = entry.getKey().toString();
-            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
-            if(symbolEntry1.getType().equals("func") && name1.equals("main")){
-                InstructionEntry instructionEntry4 = new InstructionEntry("stackalloc", 0);
-                InstructionEntry instructionEntry = new InstructionEntry("call", funcIndex.get(name1) - 8);
-                instructionEntries[j++] = instructionEntry4;
-                instructionEntries[j++] = instructionEntry;
+    public int getFuncIndex(String name) {
+        for (int i = 0; i < funcList.size(); i++) {
+            if (funcList.get(i).equals(name)) {
+                return i;
             }
         }
-        SymbolEntry start = symbolTable.get("_start");
-        start.setInstructions(instructionEntries);
-        start.setInstructionLen(j);
+        return -1;
     }
-    /*
-    * function_param -> 'const'? IDENT ':' ty
-      function_param_list -> function_param (',' function_param)*
-      function -> 'fn' IDENT '(' function_param_list? ')' '->' ty block_stmt
-    *  */
-    private void analyseFunction() throws CompileError {
-        expect(TokenType.FN_KW);
-        //函数名
-        var nameToken = expect(TokenType.IDENT);
-        String name = (String) nameToken.getValue();
-        addSymbol(name, "func", "returnType", layer++,true, false, nameToken.getStartPos());
-        expect(TokenType.L_PAREN);
-        if(nextIf(TokenType.R_PAREN) == null){
-            analyseFunctionParamList(name);
-        }
-        expect(TokenType.ARROW);
-        //返回值类型，以后可能要改，加入符号表啥的
-        String returnType = (String)expect(TokenType.IDENT).getValue();
-        // 加入符号表
 
-        if(name.equals("main")){
-            hasMain = true;
+
+    //    program -> (decl_stmt| function)*
+    public void analyseProgram() throws CompileError {
+        init();
+        while (check(TokenType.FN_KW) || check(TokenType.LET_KW) || check(TokenType.CONST_KW)) {
+            if (check(TokenType.FN_KW)) {
+                analyseFunction();
+            } else {
+                analyseDeclStmt("_start");
+            }
         }
-        String type = "func";
-//        addSymbol(name,  type, returnType, layer++,true, false, nameToken.getStartPos());
-        SymbolEntry thisSymbol = symbolTable.get(name);
-        thisSymbol.setReturnType(returnType);
-        funcIndex.put(name, findex++);
-        analyseBlockStmt(name, false, 0, 0, 0);
-        if(returnType.equals("void")){
-            SymbolEntry function = symbolTable.get(name);
-            InstructionEntry[] instructionEntries = function.getInstructions();
-            int len = function.getInstructionLen();
-            InstructionEntry instructionEntry1 = new InstructionEntry("ret");
-            instructionEntries[len++] = instructionEntry1;
-            function.setInstructionLen(len);
-            function.setInstructions(instructionEntries);
+        if (!hasMainFuc) {
+            throw new AnalyzeError(ErrorCode.NoEnd, peek().getStartPos());
         }
-        //将当前的变量弹出符号表
-        int currentLayer = layer;
+        SymbolEntry startSymbol = symbolTable.get("_start");
+        InstructionEntry instructionEntry = new InstructionEntry("stackalloc", 0);
+        ArrayList<InstructionEntry> instructionEntries = startSymbol.getInstructions();
+        instructionEntries.add(instructionEntry);
+        InstructionEntry instructionEntry1 = new InstructionEntry("call", getFuncIndex("main"));
+        instructionEntries.add(instructionEntry1);
+        startSymbol.setInstructions(instructionEntries);
+
+        expect(TokenType.EOF);
+    }
+
+    public void init() throws AnalyzeError {
+//        先将start函数加入符号表
+//        addSymbol("_start", "func", TokenType.VOID, 0, true, true, peek().getStartPos());
+        addSymbol("getint", "func", TokenType.INT, level, true, true, currentToken.getStartPos());
+        funcList.add("getint");
+        addSymbol("getdouble", "func", TokenType.DOUBLE, level, true, true, currentToken.getStartPos());
+        funcList.add("getdouble");
+        addSymbol("getchar", "func", TokenType.INT, level, true, true, currentToken.getStartPos());
+        funcList.add("getchar");
+        addSymbol("putint", "func", TokenType.INT, level, true, true, currentToken.getStartPos());
+        funcList.add("getchar");
+        addSymbol("getint", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
+        funcList.add("getchar");
+        addSymbol("putdouble", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
+        funcList.add("putdouble");
+        addSymbol("putstr", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
+        funcList.add("putstr");
+        addSymbol("putln", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
+        funcList.add("putln");
+        addSymbol("_start", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
+        funcList.add("_start");
+    }
+
+
+    //    function -> 'fn' IDENT '(' function_param_list? ')' '->' ty block_stmt
+    public void analyseFunction() throws CompileError {
+        expect(TokenType.FN_KW);
+        Token identToken = expect(TokenType.IDENT);
+        String funcName = identToken.getValueString();
+        if (symbolTable.get(funcName) != null) {
+            throw new AnalyzeError(ErrorCode.ReDefine, identToken.getStartPos());
+        }
+        expect(TokenType.L_PAREN);
+        if (!check(TokenType.R_PAREN)) {
+            analyseFunctionParamList(funcName);
+        }
+        expect(TokenType.R_PAREN);
+        expect(TokenType.ARROW);
+        TokenType type = analyseTy();
+        if (type == TokenType.VOID) {
+            allReturn = true;
+        }
+
+        if (funcName.equals("main")) {
+            hasMainFuc = true;
+        }
+        addSymbol(funcName, "func", type, level++, true, true, identToken.getStartPos());
+        funcList.add(funcName);
+
+        analyseBlockStmt(funcName, false, 0, 0, 0);
+
+        if (type == TokenType.VOID) {
+            SymbolEntry funcSymbol = symbolTable.get(funcName);
+            InstructionEntry instructionEntry = new InstructionEntry(("ret"));
+            ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+            instructionEntries.add(instructionEntry);
+            funcSymbol.setInstructions(instructionEntries);
+        }
+
+//        将当前函数中的变量弹出符号表
         Iterator iter = symbolTable.entrySet().iterator();
-        while(iter.hasNext()){
-            HashMap.Entry entry = (HashMap.Entry)iter.next();
+        while (iter.hasNext()) {
+            HashMap.Entry entry = (HashMap.Entry) iter.next();
             String varname = entry.getKey().toString();
             SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
-            if(symbolEntry.getLayer() == currentLayer){
-                if(globaVarIndex.get(varname) != null){
-                    symbolEntry.setLayer(0);
-                    symbolEntry.setParam(false);
-                }
-                else{
+            if (symbolEntry.getLevel() == level) {
+                if (getGlobalIndex(varname) != -1) {
+                    symbolEntry.setLevel(0);
+                    symbolEntry.setGlobal(true);
+                    symbolEntry.setKind("var");
+                } else {
                     iter.remove();
                 }
             }
         }
-        layer = currentLayer - 1;
-
+        level--;
     }
-    private void analyseFunctionParamList(String funcName) throws CompileError {
-        if(check(TokenType.CONST_KW) || check(TokenType.IDENT)){
+
+
+    //    function_param_list -> function_param (',' function_param)*
+    public void analyseFunctionParamList(String funcName) throws CompileError {
+        if (check(TokenType.CONST_KW) || check(TokenType.IDENT)) {
             analyseFunctionParam(funcName);
         }
-        while(check(TokenType.COMMA)){
+        while (check(TokenType.COMMA)) {
             expect(TokenType.COMMA);
             analyseFunctionParam(funcName);
         }
-        expect(TokenType.R_PAREN);
     }
-    private void analyseFunctionParam(String funcName) throws CompileError{
-        boolean isconst = false;
-        if(nextIf(TokenType.CONST_KW) != null){
-            isconst = true;
+
+    //    function_param -> 'const'? IDENT ':' ty
+    public void analyseFunctionParam(String funcName) throws CompileError {
+        boolean isConst = false;
+        if (check(TokenType.CONST_KW)) {
+            expect(TokenType.CONST_KW);
+            isConst = true;
         }
-        var nameToken = expect(TokenType.IDENT);
+        Token identToken = expect(TokenType.IDENT);
         expect(TokenType.COLON);
-        String type = (String)expect(TokenType.IDENT).getValue();
-        // 加入符号表
-        String name = (String) nameToken.getValue();
-        addSymbol(name, type, layer,true, isconst, nameToken.getStartPos());
-        SymbolEntry thisSymbol = symbolTable.get(name);
-        thisSymbol.setParam(true);
-        SymbolEntry function = symbolTable.get(funcName);
-        HashMap<String, Integer> argVars = function.getArgVars();
-        int argVarsCount = function.getArgVarCount();
-        argVars.put(name, argVarsCount++);
-        function.setArgVars(argVars);
-        function.setArgVarCount(argVarsCount);
-    }
-    private void analyseStmt(String funcName, boolean isLoop, int loc1, int loc2, int elseLayer) throws CompileError{
-        if(check(TokenType.R_BRACE)){
-        }
-        else{
-            //变量声明语句
-            if(check(TokenType.LET_KW)){
-                analyseLetDeclStmt(funcName, true);
-            }
-            //常量声明语句
-            else if(check(TokenType.CONST_KW)){
-                analyseConstDeclStmt(funcName, true);
-            }
-            //if语句
-            else if(check(TokenType.IF_KW)){
-                analyseIfStmt(funcName, isLoop, loc1, loc2, elseLayer);
-            }
-            //while语句
-            else if(check(TokenType.WHILE_KW)){
-                analyseWhileStmt(funcName);
-            }
-            //return语句
-            else if(check(TokenType.RETURN_KW)){
-                analyseReturnStmt(funcName);
-            }
-            //语句块
-            else if(check(TokenType.L_BRACE)){
-                analyseBlockStmt(funcName, isLoop, loc1, loc2, elseLayer);
-            }
-            //break语句
-            else if(check(TokenType.BREAK_KW)){
-                if(!isLoop){
-                    throw new AnalyzeError(ErrorCode.BreakOrContinueWrong, new Pos(0, 0));
-                }
-                analyseBreakStmt(funcName, loc2, elseLayer);
-            }
-            //continue语句
-            else if(check(TokenType.CONTINUE_KW)){
-                if(!isLoop){
-                    throw new AnalyzeError(ErrorCode.BreakOrContinueWrong, new Pos(0, 0));
-                }
-                analyseContinueStmt(funcName, loc1, elseLayer);
-            }
-            //空语句
-            else if(check(TokenType.SEMICOLON)){
-                analyseEmptyStmt();
-            }
-            //表达式语句
-            else{
-                analyseExprStmt(funcName);
-            }
-        }
-    }
-    private void analyseExprStmt(String funcName) throws CompileError{
-        analyseExpr(funcName);
-        expect(TokenType.SEMICOLON);
+        TokenType type = analyseTy();
+        addSymbol(identToken.getValueString(), "param", type, level, isConst, false, identToken.getStartPos());
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
+        ArrayList<String> paramList = funcSymbol.getParamVars();
+        paramList.add(identToken.getValueString());
+        funcSymbol.setParamVars(paramList);
 
     }
-    private void analyseEmptyStmt() throws CompileError{
-        expect(TokenType.SEMICOLON);
-    }
-    private void analyseBreakStmt(String funcName, int loc, int elseLayer) throws CompileError{
-        expect(TokenType.BREAK_KW);
-        int currentLoc = symbolTable.get(funcName).getInstructionLen();
-        insertInstru(funcName, new InstructionEntry("br", loc - currentLoc - 3 - elseLayer), currentLoc);
-        expect(TokenType.SEMICOLON);
-    }
-    private void analyseContinueStmt(String funcName, int loc, int elseLayer) throws CompileError{
-        expect(TokenType.CONTINUE_KW);
-        int currentLoc = symbolTable.get(funcName).getInstructionLen();
-        insertInstru(funcName, new InstructionEntry("br", loc - currentLoc - 3 - elseLayer), currentLoc);
-        expect(TokenType.SEMICOLON);
-    }
-    private void analyseBlockStmt(String funcName, boolean isLoop, int loc1, int loc2, int elseLayer) throws CompileError{
+
+    //    block_stmt -> '{' stmt* '}'
+    public void analyseBlockStmt(String funcName, boolean isInLoop, int startLoc, int endLoc, int ifLayer) throws CompileError {
         expect(TokenType.L_BRACE);
-//        if(nextIf(TokenType.R_BRACE) == null){
-//            analyseStmt();
-//        }
-        while(!check(TokenType.R_BRACE)){
-            analyseStmt(funcName, isLoop, loc1, loc2, elseLayer);
+        while (!check(TokenType.R_BRACE)) {
+            analyseStmt(funcName, isInLoop, startLoc, endLoc, ifLayer);
         }
         expect(TokenType.R_BRACE);
     }
-    private void analyseReturnStmt(String funcName) throws CompileError{
-        boolean isInt = false;
-        SymbolEntry symbolEntry = symbolTable.get(funcName);
-        var nameToken = expect(TokenType.RETURN_KW);
-        SymbolEntry function = symbolTable.get(funcName);
-        InstructionEntry[] instructionEntries = function.getInstructions();
-        //有返回值
-        if(!check(TokenType.SEMICOLON)){
-            int len = function.getInstructionLen();
-            InstructionEntry instructionEntry1 = new InstructionEntry("arga", 0);
-            instructionEntries[len++] = instructionEntry1;
-            function.setInstructionLen(len);
-            function.setInstructions(instructionEntries);
-            isInt = true;
-            String type = analyseExpr(funcName);
-            instructionEntries = function.getInstructions();
-            len = function.getInstructionLen();
-            InstructionEntry instructionEntry2 = new InstructionEntry("store64");
-            instructionEntries[len++] = instructionEntry2;
-            function.setInstructionLen(len);
-            function.setInstructions(instructionEntries);
-            assert symbolEntry != null;
-            if(!symbolEntry.getReturnType().equals(type)){
-                throw new AnalyzeError(ErrorCode.NotDeclared, nameToken.getStartPos());
-            }
-        }
-        assert symbolEntry != null;
-        if(symbolEntry.getReturnType().equals("int")){
-            if(!isInt){
-                throw new AnalyzeError(ErrorCode.NotDeclared, nameToken.getStartPos());
-            }
-        }
-        instructionEntries = function.getInstructions();
-        int len = function.getInstructionLen();
-        InstructionEntry instructionEntry3 = new InstructionEntry("ret");
-        instructionEntries[len++] = instructionEntry3;
-        function.setInstructionLen(len);
-        function.setInstructions(instructionEntries);
-        expect(TokenType.SEMICOLON);
 
 
+    //    stmt ->
+//    expr_stmt
+//    | decl_stmt
+//    | if_stmt
+//    | while_stmt
+//    | return_stmt
+//    | block_stmt
+//    | empty_stmt
+    public void analyseStmt(String funcName, boolean isInLoop, int startLoc, int endLoc, int ifLayer) throws CompileError {
+//    empty_stmt -> ';'
+        if (check(TokenType.SEMICOLON)) {
+            expect(TokenType.SEMICOLON);
+        }
+        //    let_decl_stmt -> 'let' IDENT ':' ty ('=' expr)? ';'
+        else if (check(TokenType.LET_KW)) {
+            analyseLetDeclStmt(funcName);
+//    const_decl_stmt -> 'const' IDENT ':' ty '=' expr ';'
+        } else if (check(TokenType.CONST_KW)) {
+            analyseConstDeclStmt(funcName);
+        }
+//    if_stmt -> 'if' expr block_stmt ('else' (block_stmt | if_stmt))?
+        else if (check(TokenType.IF_KW)) {
+            analyseIfStmt(funcName, isInLoop, startLoc, endLoc, ifLayer);
+        }
+//    while_stmt -> 'while' expr block_stmt
+        else if (check(TokenType.WHILE_KW)) {
+            analyseWhileStmt(funcName);
+        }
+//    return_stmt -> 'return' expr? ';'
+        else if (check(TokenType.RETURN_KW)) {
+            analyseReturnStmt(funcName);
+        }
+//    block_stmt -> '{' stmt* '}'
+        else if (check(TokenType.L_BRACE)) {
+            analyseBlockStmt(funcName, isInLoop, startLoc, endLoc, ifLayer);
+        } else if (check(TokenType.BREAK_KW)) {
+            if (!isInLoop) {
+                throw new AnalyzeError(ErrorCode.NoEnd, new Pos(0, 0));
+            }
+            analyseBreakStmt(funcName, endLoc, ifLayer);
+        } else if (check(TokenType.CONTINUE_KW)) {
+            if (!isInLoop) {
+                throw new AnalyzeError(ErrorCode.NoEnd, new Pos(0, 0));
+            }
+            analyseContinueStmt(funcName, startLoc, ifLayer);
+        }
+//    expr_stmt -> expr ';'
+        else {
+            analyseExprStmt(funcName);
+        }
     }
 
-    private void insertInstru(String funcname, InstructionEntry instructionEntry, int pos){
-        SymbolEntry function = symbolTable.get(funcname);
-        InstructionEntry[] instructionEntries = function.getInstructions();
-        int len = function.getInstructionLen();
-        for(int i = len;i > pos;i--){
-            instructionEntries[i] = instructionEntries[i - 1];
-        }
-        instructionEntries[pos] = instructionEntry;
-        len++;
-        function.setInstructionLen(len);
-        function.setInstructions(instructionEntries);
-    }
-
-    private void analyseWhileStmt(String funcName) throws CompileError{
-        expect(TokenType.WHILE_KW);
-        SymbolEntry function = symbolTable.get(funcName);
-        InstructionEntry[] instructionEntries = function.getInstructions();
-        int len = function.getInstructionLen();
-        InstructionEntry instructionEntry1 = new InstructionEntry("br", 0);
-        instructionEntries[len++] = instructionEntry1;
-        function.setInstructionLen(len);
-        function.setInstructions(instructionEntries);
-        //记录当前指令集位置为loc1
-        int loc1 = function.getInstructionLen();
-        System.out.println("loc1:" + loc1);
+    public void analyseExprStmt(String funcName) throws CompileError {
         analyseExpr(funcName);
-        //记录当前指令集位置为loc2
-        int loc2 = function.getInstructionLen();
-        instructionEntries = function.getInstructions();
-        if(!instructionEntries[loc2 - 1].getIns().equals("brtrue") && !instructionEntries[loc2 - 1].getIns().equals("brfalse")){
-            insertInstru(funcName, new InstructionEntry("brtrue", 1), loc2++);
-        }
-        System.out.println("loc2:" + loc2);
-        analyseBlockStmt(funcName, true, loc1, loc2, 0);
-        //记录当前指令集位置为loc3
-        int loc3 = function.getInstructionLen();
-        insertInstru(funcName, new InstructionEntry("br", loc3 - loc2 + 1), loc2);
-        insertInstru(funcName, new InstructionEntry("br", loc1 - loc3 - 2), loc3 + 1);
+        expect(TokenType.SEMICOLON);
     }
-    private void analyseIfStmt(String funcName, boolean isLoop, int loc4, int loc5, int elseLayer) throws CompileError{
+
+    public void analyseContinueStmt(String funcName, int startLoc, int ifLayer) throws CompileError {
+        expect(TokenType.CONTINUE_KW);
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
+        ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+        int currentLoc = instructionEntries.size();
+        InstructionEntry instructionEntry = new InstructionEntry("br", startLoc - currentLoc - 3 - ifLayer);
+        instructionEntries.add(instructionEntry);
+        funcSymbol.setInstructions(instructionEntries);
+        expect(TokenType.SEMICOLON);
+    }
+
+    public void analyseBreakStmt(String funcName, int endLoc, int ifLayer) throws CompileError {
+        expect(TokenType.BREAK_KW);
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
+        ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+        int currentLoc = instructionEntries.size();
+        InstructionEntry instructionEntry = new InstructionEntry("br", endLoc - currentLoc - 3 - ifLayer);
+        instructionEntries.add(instructionEntry);
+        funcSymbol.setInstructions(instructionEntries);
+        expect(TokenType.SEMICOLON);
+    }
+
+    //    if_stmt -> 'if' expr block_stmt ('else' (block_stmt | if_stmt))?
+    public void analyseIfStmt(String funcName, boolean isInLoop, int startLoc, int endLoc, int ifLayer) throws CompileError {
         expect(TokenType.IF_KW);
-        SymbolEntry function = symbolTable.get(funcName);
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
         analyseExpr(funcName);
-        //loc1
-        int loc1 = function.getInstructionLen();
-        InstructionEntry[] instructionEntries = function.getInstructions();
-        if(!instructionEntries[loc1 - 1].getIns().equals("brtrue") && !instructionEntries[loc1 - 1].getIns().equals("brfalse")){
-            insertInstru(funcName, new InstructionEntry("brtrue", 1), loc1++);
+        ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+        int loc1 = instructionEntries.size();
+        InstructionEntry endIns = instructionEntries.get(instructionEntries.size() - 1);
+        if (!endIns.getIns().equals("brtrue") && !endIns.getIns().equals("brfalse")) {
+            InstructionEntry instructionEntry = new InstructionEntry("brture", 1);
+            instructionEntries.add(instructionEntry);
         }
-        analyseBlockStmt(funcName, isLoop, loc4, loc5, elseLayer);
-        //loc2
-        int loc2 = function.getInstructionLen();
-        insertInstru(funcName, new InstructionEntry("br", loc2 - loc1 + 1), loc1);
-        //insertInstru(funcName, new InstructionEntry("br", 0), loc2 + 1);
+        analyseBlockStmt(funcName, isInLoop, startLoc, endLoc, ifLayer);
+        int loc2 = instructionEntries.size();
+        InstructionEntry instructionEntry = new InstructionEntry("br", loc2 - loc1 + 1);
+        instructionEntries.add(instructionEntry);
         boolean hasElse = false;
-        if(nextIf(TokenType.ELSE_KW) != null){
+        if (check(TokenType.ELSE_KW)) {
+            expect(TokenType.ELSE_KW);
             hasElse = true;
-            if(check(TokenType.L_BRACE)){
-                analyseBlockStmt(funcName, isLoop, loc4, loc5, elseLayer);
-//                int loc3 = function.getInstructionLen();
-//                insertInstru(funcName, new InstructionEntry("br", loc3 - loc2), loc2 + 1);
-            }
-            else if(check(TokenType.IF_KW)){
-                elseLayer++;
-                analyseIfStmt(funcName, isLoop, loc4, loc5, elseLayer);
-                //int loc3 = function.getInstructionLen();
-                //insertInstru(funcName, new InstructionEntry("br", loc3 - loc2), loc2 + 1);
+            if (check(TokenType.L_BRACE)) {
+                analyseBlockStmt(funcName, isInLoop, startLoc, endLoc, ifLayer);
+            } else if (check(TokenType.IF_KW)) {
+                ifLayer++;
+                analyseIfStmt(funcName, isInLoop, startLoc, endLoc, ifLayer);
+            } else {
+                throw new AnalyzeError(ErrorCode.NoEnd, peek().getStartPos());
             }
         }
-        function = symbolTable.get(funcName);
-        int loc3 = function.getInstructionLen();
-        if(hasElse){
-            insertInstru(funcName, new InstructionEntry("br", loc3 - loc2), loc2 + 1);
-            loc3++;
+        int loc3 = instructionEntries.size();
+        if (hasElse) {
+            instructionEntry = new InstructionEntry("br", loc3 - loc2);
+            instructionEntries.add(loc2 + 1, instructionEntry);
         }
-        insertInstru(funcName, new InstructionEntry("br", 0), loc3);
+        instructionEntry = new InstructionEntry("br", 0);
+        instructionEntries.add(instructionEntry);
+        funcSymbol.setInstructions(instructionEntries);
     }
-    private void analyseConstDeclStmt(String funcName, boolean isLoca) throws CompileError{
-        String locaOrglob = "globa";
-        if(isLoca){
-            locaOrglob = "loca";
-        }
-        SymbolEntry function = symbolTable.get(funcName);
-        InstructionEntry[] instructionEntries = function.getInstructions();
-        int len = function.getInstructionLen();
-        int locaVarCount = function.getLocaVarCount();
-        InstructionEntry instructionEntry1 = new InstructionEntry(locaOrglob, locaVarCount++);
-        function.setLocaVarCount(locaVarCount);
-        instructionEntries[len++] = instructionEntry1;
-        function.setInstructionLen(len);
-        function.setInstructions(instructionEntries);
-        expect(TokenType.CONST_KW);
-        var nameToken = expect(TokenType.IDENT);
-        expect(TokenType.COLON);
-        String type = (String)expect(TokenType.IDENT).getValue();
-        if(!(type.equals("int") || type.equals("double"))){
-            throw new AnalyzeError(ErrorCode.InvalidAssignment, nameToken.getStartPos());
-        }
-        expect(TokenType.ASSIGN);
-        analyseExpr(funcName);
-        len = function.getInstructionLen();
-        InstructionEntry instructionEntry2 = new InstructionEntry("store64");
-        instructionEntries[len++] = instructionEntry2;
-        function.setInstructionLen(len);
-        function.setInstructions(instructionEntries);
-        expect(TokenType.SEMICOLON);
-        // 加入符号表
-        String name = (String) nameToken.getValue();
-        addSymbol(name, type, layer,true, true, nameToken.getStartPos());
-        HashMap<String,Integer> localVars = function.getLocalVars();
-        localVars.put(name, locaVarCount - 1);
-        if(!isLoca){
-            globaVarIndex.put(name, vindex++);
-        }
-    }
-    private void analyseLetDeclStmt(String funcName, boolean isLoca) throws CompileError{
-        boolean isInitialized = false;
-        SymbolEntry function = symbolTable.get(funcName);
-        expect(TokenType.LET_KW);
-        var nameToken = expect(TokenType.IDENT);
-        expect(TokenType.COLON);
-        String type = (String)expect(TokenType.IDENT).getValue();
-        if(!(type.equals("int") || type.equals("double"))){
-            throw new AnalyzeError(ErrorCode.InvalidAssignment, nameToken.getStartPos());
-        }
-        if(check(TokenType.ASSIGN)){
-            isInitialized = true;
-            expect(TokenType.ASSIGN);
-            String locaOrglob = "globa";
-            if(isLoca){
-                locaOrglob = "loca";
-            }
-            InstructionEntry[] instructionEntries = function.getInstructions();
-            int len = function.getInstructionLen();
-            int locaVarCount = function.getLocaVarCount();
-            InstructionEntry instructionEntry1 = new InstructionEntry(locaOrglob, locaVarCount++);
-            function.setLocaVarCount(locaVarCount);
-            instructionEntries[len++] = instructionEntry1;
-            function.setInstructionLen(len);
-            function.setInstructions(instructionEntries);
-            analyseExpr(funcName);
-            len = function.getInstructionLen();
-            InstructionEntry instructionEntry2 = new InstructionEntry("store64");
-            instructionEntries[len++] = instructionEntry2;
-            function.setInstructionLen(len);
-            function.setInstructions(instructionEntries);
-        }
-        else{
-            int locaVarCount = function.getLocaVarCount();
-            locaVarCount++;
-            function.setLocaVarCount(locaVarCount);
-        }
-        expect(TokenType.SEMICOLON);
 
-        // 加入符号表
-        String name = (String) nameToken.getValue();
-        addSymbol(name, type, layer, isInitialized, false, nameToken.getStartPos());
-        HashMap<String,Integer> localVars = function.getLocalVars();
-        localVars.put(name, function.getLocaVarCount() - 1);
-        if(!isLoca){
-            globaVarIndex.put(name, vindex++);
+    //    while_stmt -> 'while' expr block_stmt
+    public void analyseWhileStmt(String funcName) throws CompileError {
+        expect(TokenType.WHILE_KW);
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
+        ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+        InstructionEntry instructionEntry = new InstructionEntry("br", 0);
+        instructionEntries.add(instructionEntry);
+        int loc1 = instructionEntries.size();
+        funcSymbol.setInstructions(instructionEntries);
+        analyseExpr(funcName);
+        instructionEntries = funcSymbol.getInstructions();
+        InstructionEntry endIns = instructionEntries.get(instructionEntries.size() - 1);
+        if (!endIns.getIns().equals("brtrue") && !endIns.getIns().equals("brfalse")) {
+            instructionEntry = new InstructionEntry("brture", 1);
+            instructionEntries.add(instructionEntry);
+        }
+        int loc2 = instructionEntries.size();
+        funcSymbol.setInstructions(instructionEntries);
+        analyseBlockStmt(funcName, true, loc1, loc2, 0);
+        instructionEntries = funcSymbol.getInstructions();
+        int loc3 = instructionEntries.size();
+        instructionEntry = new InstructionEntry("br", loc3 - loc2 + 1);
+        instructionEntries.add(loc2, instructionEntry);
+        instructionEntry = new InstructionEntry("br", loc1 - loc3 - 2);
+        instructionEntries.add(instructionEntry);
+        funcSymbol.setInstructions(instructionEntries);
+    }
+
+    //    return_stmt -> 'return' expr? ';'
+    public void analyseReturnStmt(String funcName) throws CompileError {
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
+        InstructionEntry instructionEntry;
+        Token token = expect(TokenType.RETURN_KW);
+        ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+//        有返回值
+        if (check(TokenType.SEMICOLON)) {
+            expect(TokenType.SEMICOLON);
+            if (funcSymbol.getType() != TokenType.VOID) {
+                throw new AnalyzeError(ErrorCode.NotDeclared, token.getStartPos());
+            }
+        } else {
+            instructionEntry = new InstructionEntry("arga", 0);
+            instructionEntries.add(instructionEntry);
+            funcSymbol.setInstructions(instructionEntries);
+            TokenType type = analyseExpr(funcName);
+            instructionEntries = funcSymbol.getInstructions();
+            instructionEntry = new InstructionEntry("store64");
+            instructionEntries.add(instructionEntry);
+            funcSymbol.setInstructions(instructionEntries);
+            if (funcSymbol.getType() != type) {
+                throw new AnalyzeError(ErrorCode.NotDeclared, token.getStartPos());
+            }
+        }
+        instructionEntries = funcSymbol.getInstructions();
+        instructionEntry = new InstructionEntry("ret");
+        instructionEntries.add(instructionEntry);
+        funcSymbol.setInstructions(instructionEntries);
+        expect(TokenType.SEMICOLON);
+    }
+
+    //    decl_stmt -> let_decl_stmt | const_decl_stmt
+    public void analyseDeclStmt(String funcName) throws CompileError {
+        if (check(TokenType.LET_KW)) {
+            analyseLetDeclStmt(funcName);
+        } else {
+            analyseConstDeclStmt(funcName);
         }
     }
+
+    //    let_decl_stmt -> 'let' IDENT ':' ty ('=' expr)? ';'
+    public void analyseLetDeclStmt(String funcName) throws CompileError {
+        expect(TokenType.LET_KW);
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
+        Token identToken = expect(TokenType.IDENT);
+        expect(TokenType.COLON);
+        TokenType type = analyseTy();
+        if (type == TokenType.VOID) {
+            throw new AnalyzeError(ErrorCode.InvalidAssignment, identToken.getStartPos());
+        }
+//        加入符号表
+        addSymbol(identToken.getValueString(), "var", type, level, false, false, identToken.getStartPos());
+        SymbolEntry varSymbol = symbolTable.get(identToken.getValueString());
+        ArrayList<String> localVars = funcSymbol.getLocVars();
+        ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+        InstructionEntry instructionEntry;
+        if (check(TokenType.ASSIGN)) {
+            expect(TokenType.ASSIGN);
+            varSymbol.setInitialized(true);
+            if (level == 0) {
+                varSymbol.setGlobal(true);
+                globalVarList.add(identToken.getValueString());
+                instructionEntry = new InstructionEntry("globa", localVars.size());
+            } else {
+                instructionEntry = new InstructionEntry("loca", localVars.size());
+            }
+            instructionEntries.add(instructionEntry);
+            funcSymbol.setInstructions(instructionEntries);
+            analyseExpr(funcName);
+            instructionEntries = funcSymbol.getInstructions();
+            instructionEntry = new InstructionEntry("store64");
+            instructionEntries.add(instructionEntry);
+            funcSymbol.setInstructions(instructionEntries);
+        }
+        localVars.add(identToken.getValueString());
+        funcSymbol.setLocVars(localVars);
+        expect(TokenType.SEMICOLON);
+    }
+
+
+    //    const_decl_stmt -> 'const' IDENT ':' ty '=' expr ';'
+    public void analyseConstDeclStmt(String funcName) throws CompileError {
+        expect(TokenType.CONST_KW);
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
+        Token identToken = expect(TokenType.IDENT);
+        expect(TokenType.COLON);
+        TokenType type = analyseTy();
+        if (type == TokenType.VOID) {
+            throw new AnalyzeError(ErrorCode.InvalidAssignment, identToken.getStartPos());
+        }
+//        加入符号表
+        addSymbol(identToken.getValueString(), "var", type, level, true, true, identToken.getStartPos());
+        SymbolEntry varSymbol = symbolTable.get(identToken.getValueString());
+        ArrayList<String> localVars = funcSymbol.getLocVars();
+        ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+        InstructionEntry instructionEntry;
+        expect(TokenType.ASSIGN);
+        varSymbol.setInitialized(true);
+        if (level == 0) {
+            varSymbol.setGlobal(true);
+            globalVarList.add(identToken.getValueString());
+            instructionEntry = new InstructionEntry("globa", localVars.size());
+        } else {
+            instructionEntry = new InstructionEntry("loca", localVars.size());
+        }
+        instructionEntries.add(instructionEntry);
+        funcSymbol.setInstructions(instructionEntries);
+        analyseExpr(funcName);
+        instructionEntries = funcSymbol.getInstructions();
+        instructionEntry = new InstructionEntry("store64");
+        instructionEntries.add(instructionEntry);
+        funcSymbol.setInstructions(instructionEntries);
+        localVars.add(identToken.getValueString());
+        funcSymbol.setLocVars(localVars);
+        expect(TokenType.SEMICOLON);
+    }
+
+
+    public TokenType analyseTy() throws CompileError {
+        if (check(TokenType.INT)) {
+            return TokenType.INT;
+        } else if (check(TokenType.VOID)) {
+            return TokenType.VOID;
+        } else {
+            return TokenType.DOUBLE;
+        }
+    }
+
+
     /*
      * 改写表达式相关的产生式：
      * E -> C ( == | != | < | > | <= | >= C )
@@ -695,11 +693,11 @@ public final class Analyser {
      * A -> ( - ) I
      * I -> IDENT | UNIT | DOUBLE | func_call | '(' E ')' | IDENT = E
      *  */
-    private String analyseExpr(String funcName) throws CompileError {
-        String type = analyseC(funcName);
+    public TokenType analyseExpr(String funcName) throws CompileError {
+        TokenType type = analyseC(funcName);
         while (true) {
             // 预读可能是运算符的 token
-            var op = peek();
+            Token op = peek();
             if (op.getTokenType() != TokenType.EQ &&
                     op.getTokenType() != TokenType.NEQ &&
                     op.getTokenType() != TokenType.LT &&
@@ -712,69 +710,60 @@ public final class Analyser {
             next();
             analyseC(funcName);
 
-            SymbolEntry function = symbolTable.get(funcName);
-            InstructionEntry[] instructionEntries = function.getInstructions();
-            int len = function.getInstructionLen();
+            SymbolEntry funcSymbol = symbolTable.get(funcName);
+            ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+            InstructionEntry instructionEntry1;
+            InstructionEntry instructionEntry2;
             // 生成代码
             if (op.getTokenType() == TokenType.EQ) {
-                InstructionEntry instructionEntry1 = new InstructionEntry("cmpi");
-                InstructionEntry instructionEntry2 = new InstructionEntry("brfalse", 1);
-                instructionEntries[len++] = instructionEntry1;
-                instructionEntries[len++] = instructionEntry2;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
+                instructionEntry1 = new InstructionEntry("cmpi");
+                instructionEntry2 = new InstructionEntry("brfalse", 1);
+                instructionEntries.add(instructionEntry1);
+                instructionEntries.add(instructionEntry2);
             } else if (op.getTokenType() == TokenType.NEQ) {
-                InstructionEntry instructionEntry1 = new InstructionEntry("cmpi");
-                InstructionEntry instructionEntry2 = new InstructionEntry("brtrue", 1);
-                instructionEntries[len++] = instructionEntry1;
-                instructionEntries[len++] = instructionEntry2;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
-            }else if (op.getTokenType() == TokenType.LT) {
-                InstructionEntry instructionEntry1 = new InstructionEntry("cmpi");
-                InstructionEntry instructionEntry2 = new InstructionEntry("setlt");
+                instructionEntry1 = new InstructionEntry("cmpi");
+                instructionEntry2 = new InstructionEntry("brtrue", 1);
+                instructionEntries.add(instructionEntry1);
+                instructionEntries.add(instructionEntry2);
+            } else if (op.getTokenType() == TokenType.LT) {
+                instructionEntry1 = new InstructionEntry("cmpi");
+                instructionEntry2 = new InstructionEntry("setlt");
                 InstructionEntry instructionEntry3 = new InstructionEntry("brtrue", 1);
-                instructionEntries[len++] = instructionEntry1;
-                instructionEntries[len++] = instructionEntry2;
-                instructionEntries[len++] = instructionEntry3;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
-            }else if (op.getTokenType() == TokenType.GT) {
-                InstructionEntry instructionEntry1 = new InstructionEntry("cmpi");
-                InstructionEntry instructionEntry2 = new InstructionEntry("setgt");
+                instructionEntries.add(instructionEntry1);
+                instructionEntries.add(instructionEntry2);
+                instructionEntries.add(instructionEntry3);
+            } else if (op.getTokenType() == TokenType.GT) {
+                instructionEntry1 = new InstructionEntry("cmpi");
+                instructionEntry2 = new InstructionEntry("setgt");
                 InstructionEntry instructionEntry3 = new InstructionEntry("brtrue", 1);
-                instructionEntries[len++] = instructionEntry1;
-                instructionEntries[len++] = instructionEntry2;
-                instructionEntries[len++] = instructionEntry3;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
-            }else if (op.getTokenType() == TokenType.LE) {
-                InstructionEntry instructionEntry1 = new InstructionEntry("cmpi");
-                InstructionEntry instructionEntry2 = new InstructionEntry("setgt");
+                instructionEntries.add(instructionEntry1);
+                instructionEntries.add(instructionEntry2);
+                instructionEntries.add(instructionEntry3);
+            } else if (op.getTokenType() == TokenType.LE) {
+                instructionEntry1 = new InstructionEntry("cmpi");
+                instructionEntry2 = new InstructionEntry("setgt");
                 InstructionEntry instructionEntry3 = new InstructionEntry("brfalse", 1);
-                instructionEntries[len++] = instructionEntry1;
-                instructionEntries[len++] = instructionEntry2;
-                instructionEntries[len++] = instructionEntry3;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
-            }else if (op.getTokenType() == TokenType.GE) {
-                InstructionEntry instructionEntry1 = new InstructionEntry("cmpi");
-                InstructionEntry instructionEntry2 = new InstructionEntry("setlt");
+                instructionEntries.add(instructionEntry1);
+                instructionEntries.add(instructionEntry2);
+                instructionEntries.add(instructionEntry3);
+            } else {
+                instructionEntry1 = new InstructionEntry("cmpi");
+                instructionEntry2 = new InstructionEntry("setlt");
                 InstructionEntry instructionEntry3 = new InstructionEntry("brfalse", 1);
-                instructionEntries[len++] = instructionEntry1;
-                instructionEntries[len++] = instructionEntry2;
-                instructionEntries[len++] = instructionEntry3;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
+                instructionEntries.add(instructionEntry1);
+                instructionEntries.add(instructionEntry2);
+                instructionEntries.add(instructionEntry3);
             }
+            funcSymbol.setInstructions(instructionEntries);
         }
         return type;
     }
-    private String analyseC(String funcName) throws CompileError {
-        String type = analyseT(funcName);
+
+    public TokenType analyseC(String funcName) throws CompileError {
+        TokenType type = analyseT(funcName);
         while (true) {
             // 预读可能是运算符的 token
-            var op = peek();
+            Token op = peek();
             if (op.getTokenType() != TokenType.PLUS &&
                     op.getTokenType() != TokenType.MINUS) {
                 break;
@@ -782,29 +771,26 @@ public final class Analyser {
             // 运算符
             next();
             analyseT(funcName);
-            SymbolEntry function = symbolTable.get(funcName);
-            InstructionEntry[] instructionEntries = function.getInstructions();
-            int len = function.getInstructionLen();
+            SymbolEntry funcSymbol = symbolTable.get(funcName);
+            ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+            InstructionEntry instructionEntry;
             // 生成代码
             if (op.getTokenType() == TokenType.PLUS) {
-                InstructionEntry instructionEntry1 = new InstructionEntry("addi");
-                instructionEntries[len++] = instructionEntry1;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
-            } else if (op.getTokenType() == TokenType.MINUS) {
-                InstructionEntry instructionEntry1 = new InstructionEntry("subi");
-                instructionEntries[len++] = instructionEntry1;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
+                instructionEntry = new InstructionEntry("addi");
+            } else {
+                instructionEntry = new InstructionEntry("subi");
             }
+            instructionEntries.add(instructionEntry);
+            funcSymbol.setInstructions(instructionEntries);
         }
         return type;
     }
-    private String analyseT(String funcName) throws CompileError {
-        String type = analyseF(funcName);
+
+    public TokenType analyseT(String funcName) throws CompileError {
+        TokenType type = analyseF(funcName);
         while (true) {
             // 预读可能是运算符的 token
-            var op = peek();
+            Token op = peek();
             if (op.getTokenType() != TokenType.MUL &&
                     op.getTokenType() != TokenType.DIV) {
                 break;
@@ -812,608 +798,648 @@ public final class Analyser {
             // 运算符
             next();
             analyseF(funcName);
-            SymbolEntry function = symbolTable.get(funcName);
-            InstructionEntry[] instructionEntries = function.getInstructions();
-            int len = function.getInstructionLen();
+            SymbolEntry funcSymbol = symbolTable.get(funcName);
+            ArrayList<InstructionEntry> instructionEntries = new ArrayList<>();
+            instructionEntries = funcSymbol.getInstructions();
             // 生成代码
             if (op.getTokenType() == TokenType.MUL) {
                 InstructionEntry instructionEntry1 = new InstructionEntry("multi");
-                instructionEntries[len++] = instructionEntry1;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
-            } else if (op.getTokenType() == TokenType.DIV) {
-                InstructionEntry instructionEntry1 = new InstructionEntry("divi");
-                instructionEntries[len++] = instructionEntry1;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
+                instructionEntries.add(instructionEntry1);
             }
+            {
+                InstructionEntry instructionEntry1 = new InstructionEntry("divi");
+                instructionEntries.add(instructionEntry1);
+            }
+            funcSymbol.setInstructions(instructionEntries);
         }
         return type;
     }
-    private String analyseF(String funcName) throws CompileError {
-        String type = analyseA(funcName);
-        if(check(TokenType.AS_KW)) {
+
+    public TokenType analyseF(String funcName) throws CompileError {
+        TokenType type = analyseA(funcName);
+        if (check(TokenType.AS_KW)) {
             expect(TokenType.AS_KW);
             expect(TokenType.IDENT);
         }
         return type;
     }
-    private String analyseA(String funcName) throws CompileError {
-        String type;
+
+    public TokenType analyseA(String funcName) throws CompileError {
+        TokenType type;
         int minusCount = 0;
-        while(check(TokenType.MINUS)){
+        while (check(TokenType.MINUS)) {
             minusCount++;
             expect(TokenType.MINUS);
         }
         type = analyseI(funcName);
-        for(int i = 0;i < minusCount;i++){
-            SymbolEntry function = symbolTable.get(funcName);
-            InstructionEntry[] instructionEntries = function.getInstructions();
-            int len = function.getInstructionLen();
+        for (int i = 0; i < minusCount; i++) {
+            SymbolEntry funcSymbol = symbolTable.get(funcName);
+            ArrayList<InstructionEntry> instructionEntries = new ArrayList<>();
+            instructionEntries = funcSymbol.getInstructions();
             // 生成代码
             InstructionEntry instructionEntry1 = new InstructionEntry("negi");
-            instructionEntries[len++] = instructionEntry1;
-            function.setInstructionLen(len);
-            function.setInstructions(instructionEntries);
+            instructionEntries.add(instructionEntry1);
+            funcSymbol.setInstructions(instructionEntries);
         }
         return type;
     }
-    private String analyseI(String funcName) throws CompileError {
-        if(check(TokenType.IDENT)){
+
+    public TokenType analyseI(String funcName) throws CompileError {
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
+        ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+        if (check(TokenType.IDENT)) {
             Token nameToken = expect(TokenType.IDENT);
             String name = nameToken.getValueString();
-            var entry = this.symbolTable.get(name);
+            SymbolEntry entry = this.symbolTable.get(name);
             if (entry == null) {
                 throw new AnalyzeError(ErrorCode.NotDeclared, nameToken.getStartPos());
             }
             //调用函数（解决一下标准库的问题）
-            if(check(TokenType.L_PAREN)){
-                if(!entry.getType().equals("func")){
+            if (check(TokenType.L_PAREN)) {
+                if (!entry.getType().equals("func")) {
                     throw new AnalyzeError(ErrorCode.NotDeclared, nameToken.getStartPos());
                 }
                 String callOrcallname = "call";
                 boolean isLib = false;
-                if(name.equals("getint") || name.equals("getdouble") || name.equals("getchar") || name.equals("putint") || name.equals("putchar") || name.equals("putdouble") || name.equals("putstr") || name.equals("putln")){
+                if (name.equals("getint") || name.equals("getdouble") || name.equals("getchar") || name.equals("putint") || name.equals("putchar") || name.equals("putdouble") || name.equals("putstr") || name.equals("putln")) {
                     callOrcallname = "callname";
                     isLib = true;
                 }
                 expect(TokenType.L_PAREN);
                 boolean hasParam = false;
                 //有参数
-                if(!check(TokenType.R_PAREN)){
+                if (!check(TokenType.R_PAREN)) {
                     hasParam = true;
-                    SymbolEntry function = symbolTable.get(funcName);
-                    if(entry.getReturnType().equals("void")){
-                        InstructionEntry[] instructionEntries = function.getInstructions();
-                        int len = function.getInstructionLen();
-                        InstructionEntry instructionEntry1 = new InstructionEntry("stackalloc", 0);
-                        instructionEntries[len++] = instructionEntry1;
-                        function.setInstructionLen(len);
-                        function.setInstructions(instructionEntries);
-                        analyseCallParamList(funcName);
+                    InstructionEntry instructionEntry1;
+                    if (entry.getType().equals("void")) {
+                        instructionEntry1 = new InstructionEntry("stackalloc", 0);
+                    } else {
+                        instructionEntry1 = new InstructionEntry("stackalloc", 1);
                     }
-                    else if(entry.getReturnType().equals("int")){
-                        InstructionEntry[] instructionEntries = function.getInstructions();
-                        int len = function.getInstructionLen();
-                        InstructionEntry instructionEntry1 = new InstructionEntry("stackalloc", 1);
-                        instructionEntries[len++] = instructionEntry1;
-                        function.setInstructionLen(len);
-                        function.setInstructions(instructionEntries);
-                        analyseCallParamList(funcName);
-                    }
+                    instructionEntries.add(instructionEntry1);
+                    funcSymbol.setInstructions(instructionEntries);
+                    analyseCallParamList(funcName);
+
                 }
                 expect(TokenType.R_PAREN);
-                String returnType = entry.getReturnType();
-                if(returnType.equals("int") && !hasParam){
-                    SymbolEntry function = symbolTable.get(funcName);
-                    InstructionEntry[] instructionEntries = function.getInstructions();
-                    int len = function.getInstructionLen();
+                TokenType returnType = entry.getType();
+                if (returnType.equals("int") && !hasParam) {
                     // 生成代码
                     InstructionEntry instructionEntry1 = new InstructionEntry("stackalloc", 1);
-                    instructionEntries[len++] = instructionEntry1;
+                    instructionEntries.add(instructionEntry1);
                     InstructionEntry instructionEntry2;
-                    if(isLib){
-                        instructionEntry2 = new InstructionEntry(callOrcallname, funcIndex.get(name));
+                    if (isLib) {
+                        instructionEntry2 = new InstructionEntry(callOrcallname, getFuncIndex(name));
+                    } else {
+                        instructionEntry2 = new InstructionEntry(callOrcallname, getFuncIndex(name) - 8);
                     }
-                    else{
-                        instructionEntry2 = new InstructionEntry(callOrcallname, funcIndex.get(name) - 8);
-                    }
-                    instructionEntries[len++] = instructionEntry2;
-                    function.setInstructionLen(len);
-                    function.setInstructions(instructionEntries);
-                }
-                else if(returnType.equals("void") && !hasParam){
-                    SymbolEntry function = symbolTable.get(funcName);
-                    InstructionEntry[] instructionEntries = function.getInstructions();
-                    int len = function.getInstructionLen();
+                    instructionEntries.add(instructionEntry2);
+                    funcSymbol.setInstructions(instructionEntries);
+                } else if (returnType.equals("void") && !hasParam) {
                     // 生成代码
                     InstructionEntry instructionEntry1 = new InstructionEntry("stackalloc", 0);
-                    instructionEntries[len++] = instructionEntry1;
+                    instructionEntries.add(instructionEntry1);
                     InstructionEntry instructionEntry2;
-                    if(isLib){
-                        instructionEntry2 = new InstructionEntry(callOrcallname, funcIndex.get(name));
+                    if (isLib) {
+                        instructionEntry2 = new InstructionEntry(callOrcallname, getFuncIndex(name));
+                    } else {
+                        instructionEntry2 = new InstructionEntry(callOrcallname, getFuncIndex(name) - 8);
                     }
-                    else{
-                        instructionEntry2 = new InstructionEntry(callOrcallname, funcIndex.get(name) - 8);
-                    }
-                    instructionEntries[len++] = instructionEntry2;
-                    function.setInstructionLen(len);
-                    function.setInstructions(instructionEntries);
-                }
-                else{
-                    SymbolEntry function = symbolTable.get(funcName);
-                    InstructionEntry[] instructionEntries = function.getInstructions();
-                    int len = function.getInstructionLen();
+                    instructionEntries.add(instructionEntry2);
+                    funcSymbol.setInstructions(instructionEntries);
+                } else {
                     // 生成代码
                     InstructionEntry instructionEntry2;
-                    if(isLib){
-                        instructionEntry2 = new InstructionEntry(callOrcallname, funcIndex.get(name));
+                    if (isLib) {
+                        instructionEntry2 = new InstructionEntry(callOrcallname, getFuncIndex(name));
+                    } else {
+                        instructionEntry2 = new InstructionEntry(callOrcallname, getFuncIndex(name) - 8);
                     }
-                    else{
-                        instructionEntry2 = new InstructionEntry(callOrcallname, funcIndex.get(name) - 8);
-                    }
-                    instructionEntries[len++] = instructionEntry2;
-                    function.setInstructionLen(len);
-                    function.setInstructions(instructionEntries);
+                    instructionEntries.add(instructionEntry2);
+                    funcSymbol.setInstructions(instructionEntries);
                 }
                 return returnType;
             }
             //赋值
-            else if(check(TokenType.ASSIGN)){
-                if(!entry.getType().equals("int")){
+            else if (check(TokenType.ASSIGN)) {
+                if (!entry.getType().equals("int")) {
                     throw new AnalyzeError(ErrorCode.NotDeclared, nameToken.getStartPos());
                 }
-                if(entry.isConstant()){
+                if (entry.isConstant()) {
                     throw new AnalyzeError(ErrorCode.AssignToConstant, nameToken.getStartPos());
                 }
                 expect(TokenType.ASSIGN);
-                SymbolEntry function = symbolTable.get(funcName);
-                InstructionEntry[] instructionEntries = function.getInstructions();
-                int len = function.getInstructionLen();
                 // 生成代码
-                HashMap<String, Integer> localVars = function.getLocalVars();
-                HashMap<String, Integer> argVars = function.getArgVars();
-                if(entry.isParam){
-                    if(function.getReturnType().equals("void")){
-                        int thisIndex = argVars.get(name);
-                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", thisIndex - 1);
-                        instructionEntries[len++] = instructionEntry1;
+                ArrayList<String> localVars = funcSymbol.getLocVars();
+                ArrayList<String> paramVars = funcSymbol.getParamVars();
+                if (entry.getType().equals("param")) {
+                    int index = -1;
+                    for (int i = 0; i < paramVars.size(); i++) {
+                        if (paramVars.get(i).equals(name)) {
+                            index = i;
+                        }
                     }
-                    else{
-                        int thisIndex = argVars.get(name);
-                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", thisIndex);
-                        instructionEntries[len++] = instructionEntry1;
+                    if (index == -1) {
+                        throw new AnalyzeError(ErrorCode.NotDeclared, peek().getStartPos());
                     }
+                    if (funcSymbol.getType().equals("void")) {
+                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index - 1);
+                        instructionEntries.add(instructionEntry1);
+                    } else {
+                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index);
+                        instructionEntries.add(instructionEntry1);
+                    }
+                } else {
+                    int index = -1;
+                    for (int i = 0; i < localVars.size(); i++) {
+                        if (localVars.get(i).equals(name)) {
+                            index = i;
+                        }
+                    }
+                    InstructionEntry instructionEntry1;
+                    if (index == -1) {
+                        index = getGlobalIndex(name);
+                        instructionEntry1 = new InstructionEntry("globa", index);
+                    } else {
+                        instructionEntry1 = new InstructionEntry("loca", index);
+                    }
+                    instructionEntries.add(instructionEntry1);
                 }
-                else{
-                    try{
-                        int thisIndex = localVars.get(name);
-                        InstructionEntry instructionEntry1 = new InstructionEntry("loca", thisIndex);
-                        instructionEntries[len++] = instructionEntry1;
-                    }catch (NullPointerException n){
-                        int thisIndex = globaVarIndex.get(name);
-                        InstructionEntry instructionEntry1 = new InstructionEntry("globa", thisIndex);
-                        instructionEntries[len++] = instructionEntry1;
-                    }
-                }
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
-                String type = analyseExpr(funcName);
-                if(type.equals("void")){
+                funcSymbol.setInstructions(instructionEntries);
+                TokenType type = analyseExpr(funcName);
+                if (type.equals("void")) {
                     throw new AnalyzeError(ErrorCode.InvalidAssignment, nameToken.getStartPos());
                 }
-                len = function.getInstructionLen();
                 // 生成代码
                 InstructionEntry instructionEntry2 = new InstructionEntry("store64");
-                instructionEntries[len++] = instructionEntry2;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
-                return "void";
+                instructionEntries.add(instructionEntry2);
+                funcSymbol.setInstructions(instructionEntries);
+                return TokenType.VOID;
             }
             //变量名
-            else{
-                SymbolEntry function = symbolTable.get(funcName);
-                InstructionEntry[] instructionEntries = function.getInstructions();
-                int len = function.getInstructionLen();
+            else {
                 // 生成代码
-                HashMap<String, Integer> localVars = function.getLocalVars();
-                HashMap<String, Integer> argVars = function.getArgVars();
-                if(entry.isParam){
-                    if(function.getReturnType().equals("void")){
-                        int thisIndex = argVars.get(name);
-                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", thisIndex - 1);
-                        instructionEntries[len++] = instructionEntry1;
+                ArrayList<String> localVars = funcSymbol.getLocVars();
+                ArrayList<String> paramVars = funcSymbol.getParamVars();
+                if (entry.getType().equals("param")) {
+                    int index = -1;
+                    for (int i = 0; i < paramVars.size(); i++) {
+                        if (paramVars.get(i).equals(name)) {
+                            index = i;
+                        }
                     }
-                    else{
-                        int thisIndex = argVars.get(name);
-                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", thisIndex);
-                        instructionEntries[len++] = instructionEntry1;
+                    if (index == -1) {
+                        throw new AnalyzeError(ErrorCode.NotDeclared, peek().getStartPos());
                     }
-                }
-                else{
-                    try{
-                        int thisIndex = localVars.get(name);
-                        InstructionEntry instructionEntry1 = new InstructionEntry("loca", thisIndex);
-                        instructionEntries[len++] = instructionEntry1;
-                    }catch (NullPointerException n){
-                        int thisIndex = globaVarIndex.get(name);
-                        InstructionEntry instructionEntry1 = new InstructionEntry("globa", thisIndex);
-                        instructionEntries[len++] = instructionEntry1;
+                    if (funcSymbol.getType().equals("void")) {
+                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index - 1);
+                        instructionEntries.add(instructionEntry1);
+                    } else {
+                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index);
+                        instructionEntries.add(instructionEntry1);
                     }
+                } else {
+                    int index = -1;
+                    for (int i = 0; i < localVars.size(); i++) {
+                        if (localVars.get(i).equals(name)) {
+                            index = i;
+                        }
+                    }
+                    InstructionEntry instructionEntry1;
+                    if (index == -1) {
+                        index = getGlobalIndex(name);
+                        instructionEntry1 = new InstructionEntry("globa", index);
+                    } else {
+                        instructionEntry1 = new InstructionEntry("loca", index);
+                    }
+                    instructionEntries.add(instructionEntry1);
                 }
                 InstructionEntry instructionEntry2 = new InstructionEntry("load64");
-                instructionEntries[len++] = instructionEntry2;
-                function.setInstructionLen(len);
-                function.setInstructions(instructionEntries);
+                instructionEntries.add(instructionEntry2);
+                funcSymbol.setInstructions(instructionEntries);
                 return entry.getType();
             }
-        }
-        else if(check(TokenType.UINT_LITERAL)){
-            var token = expect(TokenType.UINT_LITERAL);
-            SymbolEntry function = symbolTable.get(funcName);
-            InstructionEntry[] instructionEntries = function.getInstructions();
-            int len = function.getInstructionLen();
+        } else if (check(TokenType.UINT_LITERAL)) {
+            Token token = expect(TokenType.UINT_LITERAL);
             // 生成代码
-            InstructionEntry instructionEntry1 = new InstructionEntry("push", (int)token.getValue());
-            instructionEntries[len++] = instructionEntry1;
-            function.setInstructionLen(len);
-            function.setInstructions(instructionEntries);
-            return "int";
-        }
-        else if(check(TokenType.STRING_LITERAL)){
-            var token = expect(TokenType.STRING_LITERAL);
-            String value = (String)token.getValue();
+            InstructionEntry instructionEntry1 = new InstructionEntry("push", (int) token.getValue());
+            instructionEntries.add(instructionEntry1);
+            funcSymbol.setInstructions(instructionEntries);
+            return TokenType.INT;
+        } else if (check(TokenType.STRING_LITERAL)) {
+            Token token = expect(TokenType.STRING_LITERAL);
+            String value = (String) token.getValue();
             //计算全局变量数
             int globalVarsNum = calcGlobalVars();
-            SymbolEntry function = symbolTable.get(funcName);
-            InstructionEntry[] instructionEntries = function.getInstructions();
-            int len = function.getInstructionLen();
             // 生成代码
             InstructionEntry instructionEntry1 = new InstructionEntry("push", globalVarsNum);
-            instructionEntries[len++] = instructionEntry1;
-            function.setInstructionLen(len);
-            function.setInstructions(instructionEntries);
+            instructionEntries.add(instructionEntry1);
+            funcSymbol.setInstructions(instructionEntries);
             //加入符号表
-            addSymbol(value, "string", "returnType", 0,true, true, token.getStartPos());
-            return "int";
-        }
-        else if(check(TokenType.CHAR_LITERAL)){
-            var token = expect(TokenType.CHAR_LITERAL);
-            SymbolEntry function = symbolTable.get(funcName);
-            InstructionEntry[] instructionEntries = function.getInstructions();
-            int len = function.getInstructionLen();
+            addSymbol(value, "string", TokenType.UINT_LITERAL,0,true,true,token.getStartPos());
+            return TokenType.INT;
+        } else if (check(TokenType.CHAR_LITERAL)) {
+            Token token = expect(TokenType.CHAR_LITERAL);
             // 生成代码
-            String charStr = (String)token.getValue();
+            String charStr = (String) token.getValue();
             char charCh = 0;
-            for(int i = 0;i < charStr.length();i++){
+            for (int i = 0; i < charStr.length(); i++) {
                 charCh = charStr.charAt(i);
             }
             InstructionEntry instructionEntry1 = new InstructionEntry("push", charCh);
-            instructionEntries[len++] = instructionEntry1;
-            function.setInstructionLen(len);
-            function.setInstructions(instructionEntries);
-            return "int";
-        }
-        else if(check(TokenType.DOUBLE_LITERAL)){
+            instructionEntries.add(instructionEntry1);
+            funcSymbol.setInstructions(instructionEntries);
+            return TokenType.INT;
+        } else if (check(TokenType.DOUBLE_LITERAL)) {
             expect(TokenType.DOUBLE_LITERAL);
-            return "double";
-        }
-        else if(check(TokenType.L_PAREN)){
+            return TokenType.DOUBLE;
+        } else if (check(TokenType.L_PAREN)) {
             expect(TokenType.L_PAREN);
-            String type = analyseExpr(funcName);
+            TokenType type = analyseExpr(funcName);
             expect(TokenType.R_PAREN);
             return type;
         }
-        return "null";
+        return null;
     }
-    private void analyseCallParamList(String funcName) throws CompileError{
-        analyseExpr(funcName);
-        while(check(TokenType.COMMA)){
-            expect(TokenType.COMMA);
-            analyseExpr(funcName);
-        }
-    }
-    private int calcGlobalVars(){
+
+    public int calcGlobalVars() {
         int globalVars = 0;
         Iterator iter = symbolTable.entrySet().iterator();
         while(iter.hasNext()){
             HashMap.Entry entry = (HashMap.Entry)iter.next();
             SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
-            if(!symbolEntry.getType().equals("func") && symbolEntry.getLayer() == 0){
+            if(!symbolEntry.getType().equals("func") && symbolEntry.getLevel() == 0){
                 globalVars++;
             }
         }
         return globalVars;
     }
 
+    public void analyseCallParamList(String funcName) throws CompileError {
+        analyseExpr(funcName);
+        while (check(TokenType.COMMA)) {
+            expect(TokenType.COMMA);
+            analyseExpr(funcName);
+        }
+    }
+
+    public HashMap<String,SymbolEntry> getSymbolTable() {
+        return this.symbolTable;
+    }
 
 
-
-//    private void analyseMain() throws CompileError {
-//        analyseConstantDeclaration();
-//        analyseVariableDeclaration();
-//        analyseStatementSequence();
-//
-//    }
-//
-//    private void analyseConstantDeclaration() throws CompileError {
-//        // 示例函数，示例如何解析常量声明
-//        // 常量声明 -> 常量声明语句*
-//
-//        // 如果下一个 token 是 const 就继续
-//        while (nextIf(TokenType.Const) != null) {
-//            // 常量声明语句 -> 'const' 变量名 '=' 常表达式 ';'
-//
-//            // 变量名
-//            var nameToken = expect(TokenType.Ident);
-//
-//            // 加入符号表
-//            String name = (String) nameToken.getValue();
-//            addSymbol(name, true, true, nameToken.getStartPos());
-//
-//            // 等于号
-//            expect(TokenType.Equal);
-//
-//            // 常表达式
-//            var value = analyseConstantExpression();
-//
-//            // 分号
-//            expect(TokenType.Semicolon);
-//
-//            // 这里把常量值直接放进栈里，位置和符号表记录的一样。
-//            // 更高级的程序还可以把常量的值记录下来，遇到相应的变量直接替换成这个常数值，
-//            // 我们这里就先不这么干了。
-//            instructions.add(new Instruction(Operation.LIT, value));
+//    //    expr ->
+////    operator_expr
+////    | negate_expr
+////    | assign_expr
+////    | as_expr
+////    | call_expr
+////    | literal_expr
+////    | ident_expr
+////    | group_expr
+//    public TokenType analyseExpr(String funcName) throws CompileError {
+//        TokenType tokenType;
+//        if (check(TokenType.MINUS)) {
+//            tokenType = analyseNegateExpr(Ins, InsB);
+//        } else if (check(TokenType.L_PAREN)) {
+//            tokenType = analyseGroupExpr(Ins, InsB);
 //        }
-//    }
-//
-//    private void analyseVariableDeclaration() throws CompileError {
-//        // 示例函数，示例如何解析变量声明
-//        // 变量声明 -> 变量声明语句*
-//
-//        // 如果下一个 token 是 var 就继续
-//        while (nextIf(TokenType.Var) != null) {
-//            // 变量声明语句 -> 'var' 变量名 ('=' 表达式)? ';'
-//
-//            // 变量名
-//            var nameToken = expect(TokenType.Ident);
-//
-//            // 变量初始化了吗
-//            boolean initialized = false;
-//
-//            // 下个 token 是等于号吗？如果是的话分析初始化
-//
-//            // 分析初始化的表达式
-//            if(nextIf(TokenType.Equal) != null){
-//                initialized = true;
-//                //表达式
-//                analyseExpression();
+////        literal_expr -> UINT_LITERAL | DOUBLE_LITERAL | STRING_LITERAL
+//        else if (check(TokenType.UINT_LITERAL)) {
+//            Token token = expect(TokenType.UINT_LITERAL);
+//            Ins.add(Instruction.push((Long) token.getValue()));
+//            InsB.add(Instruction.pushB((Long) token.getValue()));
+//            return TokenType.INT;
+//        } else if (check(TokenType.DOUBLE_LITERAL)) {
+//            Token token = expect(TokenType.DOUBLE_LITERAL);
+//            Ins.add(Instruction.pushd((Double) token.getValue()));
+//            InsB.add(Instruction.pushdB((Double) token.getValue()));
+//            return TokenType.DOUBLE;
+//        } else if (check(TokenType.STRING_LITERAL)) {
+//            Token token = expect(TokenType.STRING_LITERAL);
+//            String string = token.getValueString();
+//            GlobalVar globalVar = new GlobalVar();
+//            globalVar.setName(string);
+//            globalVar.setIsConst(Instruction.toBinary(1, 8));
+//            globalVar.setValue(convertToBin(string));
+//            globalVar.setConstBytes(Instruction.intToBytes(1, 1));
+//            globalVar.setValueBytes(string.getBytes());
+//            Integer globalIndex = getGlobalIndex(token.getValueString());
+//            if (globalIndex < 0) {
+//                globalVarList.add(globalVar);
+//                globalIndex = globalVarList.size() - 1;
 //            }
-//
-//            // 分号
-//            expect(TokenType.Semicolon);
-//
-//            // 加入符号表，请填写名字和当前位置（报错用）
-//            String name = /* 名字 */ (String) nameToken.getValue();;
-//            addSymbol(name, initialized, false, /* 当前位置 */ nameToken.getStartPos());
-//
-//            // 如果没有初始化的话在栈里推入一个初始值
-//            if (!initialized) {
-//                instructions.add(new Instruction(Operation.LIT, 0));
-//            }
-//        }
-//    }
-//
-//    private void analyseStatementSequence() throws CompileError {
-//        // 语句序列 -> 语句*
-//        // 语句 -> 赋值语句 | 输出语句 | 空语句
-//
-//        while (true) {
-//            // 如果下一个 token 是……
-//            var peeked = peek();
-//            //赋值语句
-//            if (peeked.getTokenType() == TokenType.Ident) {
-//                // 调用相应的分析函数
-//                // 如果遇到其他非终结符的 FIRST 集呢？
-////                var nameToken = next();
-////                //等号
-////                expect(TokenType.Equal);
-////                //表达式
-////
-////                //分号
-////                expect(TokenType.Semicolon);
-//                analyseAssignmentStatement();
-//            }
-//            //输出语句
-//            else if(peeked.getTokenType() == TokenType.Print){
-////                //PRINT
-////                next();
-////                //左括号
-////                expect(TokenType.Lparen);
-////                //表达式
-////
-////                //右括号
-////                expect(TokenType.Rparen);
-////                //分号
-////                expect(TokenType.Semicolon);
-//                analyseOutputStatement();
-//            }
-//            //空语句
-//            else if(peeked.getTokenType() == TokenType.Semicolon){
-//                //分号
-//                next();
-//            }
-//            else {
-//                // 都不是，摸了
-//                break;
-//            }
-//        }
-//    }
-//
-//    private int analyseConstantExpression() throws CompileError {
-//        // 常表达式 -> 符号? 无符号整数
-//        boolean negative = false;
-//        if (nextIf(TokenType.Plus) != null) {
-//            negative = false;
-//        } else if (nextIf(TokenType.Minus) != null) {
-//            negative = true;
-//        }
-//
-//        var token = expect(TokenType.Uint);
-//
-//        int value = (int) token.getValue();
-//        if (negative) {
-//            value = -value;
-//        }
-//
-//        return value;
-//    }
-//
-//    private void analyseExpression() throws CompileError {
-//        // 表达式 -> 项 (加法运算符 项)*
-//        // 项
-//        analyseItem();
-//
-//        while (true) {
-//            // 预读可能是运算符的 token
-//            var op = peek();
-//            if (op.getTokenType() != TokenType.Plus && op.getTokenType() != TokenType.Minus) {
-//                break;
-//            }
-//
-//            // 运算符
-//            next();
-//
-//            // 项
-//            analyseItem();
-//
-//            // 生成代码
-//            if (op.getTokenType() == TokenType.Plus) {
-//                instructions.add(new Instruction(Operation.ADD));
-//            } else if (op.getTokenType() == TokenType.Minus) {
-//                instructions.add(new Instruction(Operation.SUB));
-//            }
-//        }
-//    }
-//
-//    private void analyseAssignmentStatement() throws CompileError {
-//        // 赋值语句 -> 标识符 '=' 表达式 ';'
-//
-//        // 分析这个语句
-//
-//        // 标识符是什么？
-//        var nameToken = expect(TokenType.Ident);
-//        String name = (String)nameToken.getValue();
-//        var symbol = symbolTable.get(name);
-//        if (symbol == null) {
-//            // 没有这个标识符
-//            throw new AnalyzeError(ErrorCode.NotDeclared, /* 当前位置 */ nameToken.getStartPos());
-//        } else if (symbol.isConstant) {
-//            // 标识符是常量
-//            throw new AnalyzeError(ErrorCode.AssignToConstant, /* 当前位置 */ nameToken.getStartPos());
-//        }
-//        // 设置符号已初始化
-//        initializeSymbol(name, nameToken.getStartPos());
-//        expect(TokenType.Equal);
-//        analyseExpression();
-//        expect(TokenType.Semicolon);
-//        // 把结果保存
-//        var offset = getOffset(name, nameToken.getStartPos());
-//        instructions.add(new Instruction(Operation.STO, offset));
-//
-//
-//    }
-//
-//    private void analyseOutputStatement() throws CompileError {
-//        // 输出语句 -> 'print' '(' 表达式 ')' ';'
-//
-//        expect(TokenType.Print);
-//        expect(TokenType.LParen);
-//
-//        analyseExpression();
-//
-//        expect(TokenType.RParen);
-//        expect(TokenType.Semicolon);
-//
-//        instructions.add(new Instruction(Operation.WRT));
-//    }
-//
-//    private void analyseItem() throws CompileError {
-//        // 项 -> 因子 (乘法运算符 因子)*
-//
-//        // 因子
-//        analyseFactor();
-//
-//        while (true) {
-//            // 预读可能是运算符的 token
-//            var op = peek();
-//            if (op.getTokenType() != TokenType.Mult && op.getTokenType() != TokenType.Div) {
-//                break;
-//            }
-//
-//            // 运算符
-//            next();
-//
-//            // 因子
-//            analyseFactor();
-//
-//            // 生成代码
-//            if (op.getTokenType() == TokenType.Mult) {
-//                instructions.add(new Instruction(Operation.MUL));
-//            } else if (op.getTokenType() == TokenType.Div) {
-//                instructions.add(new Instruction(Operation.DIV));
-//            }
-//        }
-//    }
-//
-//    private void analyseFactor() throws CompileError {
-//        // 因子 -> 符号? (标识符 | 无符号整数 | '(' 表达式 ')')
-//
-//        boolean negate;
-//        if (nextIf(TokenType.Minus) != null) {
-//            negate = true;
-//            // 计算结果需要被 0 减
-//            instructions.add(new Instruction(Operation.LIT, 0));
+//            Ins.add(Instruction.push(globalIndex));
+//            InsB.add(Instruction.pushB(globalIndex));
+//            return TokenType.INT;
 //        } else {
-//            nextIf(TokenType.Plus);
-//            negate = false;
+//            tokenType = analyseAssignOrCallOrIdentExpr(Ins, InsB);
 //        }
+//        return tokenType;
+//    }
 //
-//        if (check(TokenType.Ident)) {
-//            // 是标识符
-//            var nameToken = next();
 //
-//            // 加载标识符的值
-//            String name = /* 快填 */ (String)nameToken.getValue();
-//            var symbol = symbolTable.get(name);
-//            if (symbol == null) {
-//                // 没有这个标识符
-//                throw new AnalyzeError(ErrorCode.NotDeclared, /* 当前位置 */ nameToken.getStartPos());
-//            } else if (!symbol.isInitialized) {
-//                // 标识符没初始化
-//                throw new AnalyzeError(ErrorCode.NotInitialized, /* 当前位置 */ nameToken.getStartPos());
+//    public TokenType analyseAssignOrCallOrIdentExpr(List<String> Ins, List<byte[]> InsB) throws CompileError {
+//        Token identToken = expect(TokenType.IDENT);
+//        Symbol symbol = new Symbol();
+//        symbol.setToken(identToken);
+//        Symbol identSymbol = getSymbol(symbol);
+////        call_expr -> IDENT '(' call_param_list? ')'
+////        call_param_list -> expr (',' expr)*
+//        if (check(TokenType.L_PAREN)) {
+//            expect(TokenType.L_PAREN);
+//            if (identSymbol == null) {
+//                String funcName = identToken.getValueString();
+//                GlobalVar globalVar;
+//                Integer globalIndex;
+//                switch (funcName) {
+//                    case "getint":
+//                        expect(TokenType.R_PAREN);
+//                        globalVar = new GlobalVar();
+//                        globalVar.setName("getint");
+//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
+//                        globalVar.setValue(convertToBin("getint"));
+//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
+//                        globalVar.setValueBytes(funcName.getBytes());
+//                        globalVarList.add(globalVar);
+//                        globalIndex = globalVarList.size() - 1;
+//                        Ins.add(Instruction.stackalloc(1));
+//                        InsB.add(Instruction.stackallocB(1));
+//                        Ins.add(Instruction.callname(globalIndex));
+//                        InsB.add(Instruction.callnameB(globalIndex));
+//                        return TokenType.INT;
+//                    case "getchar":
+//                        expect(TokenType.R_PAREN);
+//                        globalVar = new GlobalVar();
+//                        globalVar.setName("getchar");
+//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
+//                        globalVar.setValue(convertToBin("getchar"));
+//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
+//                        globalVar.setValueBytes(funcName.getBytes());
+//                        globalVarList.add(globalVar);
+//                        globalIndex = globalVarList.size() - 1;
+//                        Ins.add(Instruction.stackalloc(1));
+//                        InsB.add(Instruction.stackallocB(1));
+//                        Ins.add(Instruction.callname(globalIndex));
+//                        InsB.add(Instruction.callnameB(globalIndex));
+//                        return TokenType.INT;
+//                    case "getdouble":
+//                        expect(TokenType.R_PAREN);
+//                        globalVar = new GlobalVar();
+//                        globalVar.setName("getdouble");
+//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
+//                        globalVar.setValue(convertToBin("getdouble"));
+//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
+//                        globalVar.setValueBytes(funcName.getBytes());
+//                        globalVarList.add(globalVar);
+//                        globalIndex = globalVarList.size() - 1;
+//                        Ins.add(Instruction.stackalloc(1));
+//                        InsB.add(Instruction.stackallocB(1));
+//                        Ins.add(Instruction.callname(globalIndex));
+//                        InsB.add(Instruction.callnameB(globalIndex));
+//                        return TokenType.DOUBLE;
+//                    case "putint":
+//                        Ins.add(Instruction.stackalloc(0));
+//                        InsB.add(Instruction.stackallocB(0));
+//                        TokenType ret = opg(Ins, InsB);
+//                        if (ret != TokenType.INT)
+//                            throw new AnalyzeError(ErrorCode.InvalidInput, identToken.getStartPos());
+//                        expect(TokenType.R_PAREN);
+//                        globalVar = new GlobalVar();
+//                        globalVar.setName("putint");
+//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
+//                        globalVar.setValue(convertToBin("putint"));
+//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
+//                        globalVar.setValueBytes(funcName.getBytes());
+//                        globalVarList.add(globalVar);
+//                        globalIndex = globalVarList.size() - 1;
+//                        Ins.add(Instruction.callname(globalIndex));
+//                        InsB.add(Instruction.callnameB(globalIndex));
+//                        return TokenType.VOID;
+//                    case "putdouble":
+//                        Ins.add(Instruction.stackalloc(0));
+//                        InsB.add(Instruction.stackallocB(0));
+//                        ret = opg(Ins, InsB);
+//                        if (ret != TokenType.INT)
+//                            throw new AnalyzeError(ErrorCode.InvalidInput, identToken.getStartPos());
+//                        expect(TokenType.R_PAREN);
+//                        globalVar = new GlobalVar();
+//                        globalVar.setName("putdouble");
+//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
+//                        globalVar.setValue(convertToBin("putdouble"));
+//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
+//                        globalVar.setValueBytes(funcName.getBytes());
+//                        globalVarList.add(globalVar);
+//                        globalIndex = globalVarList.size() - 1;
+//                        Ins.add(Instruction.callname(globalIndex));
+//                        InsB.add(Instruction.callnameB(globalIndex));
+//                        return TokenType.VOID;
+//                    case "putchar":
+//                        Ins.add(Instruction.stackalloc(0));
+//                        InsB.add(Instruction.stackallocB(0));
+//                        expect(TokenType.R_PAREN);
+//                        ret = opg(Ins, InsB);
+//                        if (ret != TokenType.INT)
+//                            throw new AnalyzeError(ErrorCode.InvalidInput, identToken.getStartPos());
+//                        globalVar = new GlobalVar();
+//                        globalVar.setName("putchar");
+//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
+//                        globalVar.setValue(convertToBin("putchar"));
+//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
+//                        globalVar.setValueBytes(funcName.getBytes());
+//                        globalVarList.add(globalVar);
+//                        globalIndex = globalVarList.size() - 1;
+//                        Ins.add(Instruction.callname(globalIndex));
+//                        InsB.add(Instruction.callnameB(globalIndex));
+//                        return TokenType.VOID;
+//                    case "putstr":
+//                        Ins.add(Instruction.stackalloc(0));
+//                        InsB.add(Instruction.stackallocB(0));
+//                        expect(TokenType.R_PAREN);
+//                        ret = opg(Ins, InsB);
+//                        if (ret != TokenType.INT)
+//                            throw new AnalyzeError(ErrorCode.InvalidInput, identToken.getStartPos());
+//                        globalVar = new GlobalVar();
+//                        globalVar.setName("putstr");
+//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
+//                        globalVar.setValue(convertToBin("putstr"));
+//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
+//                        globalVar.setValueBytes(funcName.getBytes());
+//                        globalVarList.add(globalVar);
+//                        globalIndex = globalVarList.size() - 1;
+//                        Ins.add(Instruction.callname(globalIndex));
+//                        InsB.add(Instruction.callnameB(globalIndex));
+//                        return TokenType.VOID;
+//                    case "putln":
+//                        Ins.add(Instruction.stackalloc(0));
+//                        InsB.add(Instruction.stackallocB(0));
+//                        expect(TokenType.R_PAREN);
+//                        globalVar = new GlobalVar();
+//                        globalVar.setName("putln");
+//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
+//                        globalVar.setValue(convertToBin("putln"));
+//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
+//                        globalVar.setValueBytes(funcName.getBytes());
+//                        globalVarList.add(globalVar);
+//                        globalIndex = globalVarList.size() - 1;
+//                        Ins.add(Instruction.callname(globalIndex));
+//                        InsB.add(Instruction.callnameB(globalIndex));
+//                        return TokenType.VOID;
+//                    default:
+//                        throw new AnalyzeError(ErrorCode.InvalidIdentifier, identToken.getStartPos());
+//                }
+//            } else {
+//                if (!identSymbol.getKind().equals("var")) {
+//                    throw new AnalyzeError(ErrorCode.DuplicateDeclaration, identToken.getStartPos());
+//                }
+//                expect(TokenType.L_PAREN);
+//                if (identSymbol.getRetType() == TokenType.VOID) {
+//                    Ins.add(Instruction.stackalloc(0));
+//                    InsB.add(Instruction.stackallocB(0));
+//                } else {
+//                    Ins.add(Instruction.stackalloc(1));
+//                    InsB.add(Instruction.stackallocB(1));
+//                }
+//                if (check(TokenType.UINT_LITERAL) || check(TokenType.DOUBLE_LITERAL) || check(TokenType.STRING_LITERAL) || check(TokenType.IDENT) || check(TokenType.L_PAREN) || check(TokenType.MINUS)) {
+//                    int i = 0;
+//                    List<TokenType> paramTypes = identSymbol.getParamsType();
+//                    do {
+//                        if (i == paramTypes.size())
+//                            throw new AnalyzeError(ErrorCode.InvalidInput, peek().getStartPos());
+//                        Token peekToken = peek();
+//                        TokenType ret = opg(Ins, InsB);
+//                        if (ret != paramTypes.get(i))
+//                            throw new AnalyzeError(ErrorCode.InvalidInput, peekToken.getStartPos());
+//                        i++;
+//                    } while (nextIf(TokenType.COMMA) != null);
+//                }
+//                Integer funcIndex = funcList.indexOf((findFunc(identToken.getValueString())));
+//                Ins.add(Instruction.call(funcIndex));
+//                InsB.add(Instruction.callB(funcIndex));
 //            }
-//            var offset = getOffset(name, nameToken.getStartPos());
-//            instructions.add(new Instruction(Operation.LOD, offset));
-//        } else if (check(TokenType.Uint)) {
-//            // 是整数
-//            // 加载整数值
-//            var myInt = next();
-//            int value = (int)myInt.getValue();
-//            instructions.add(new Instruction(Operation.LIT, value));
-//        } else if (check(TokenType.LParen)) {
-//            next();
-//            // 是表达式
-//            // 调用相应的处理函数
-//            analyseExpression();
-//            expect(TokenType.RParen);
-//        } else {
-//            // 都不是，摸了
-//            throw new ExpectedTokenError(List.of(TokenType.Ident, TokenType.Uint, TokenType.LParen), next());
+//            expect(TokenType.R_PAREN);
+//            return identSymbol.getRetType();
 //        }
-//
-//        if (negate) {
-//            instructions.add(new Instruction(Operation.SUB));
+////        assign_expr -> l_expr '=' expr
+////        l_expr -> IDENT
+//        else if (check(TokenType.ASSIGN)) {
+//            expect(TokenType.ASSIGN);
+//            if (identSymbol == null) {
+//                throw new AnalyzeError(ErrorCode.NotDeclared, identToken.getStartPos());
+//            }
+//            if (identSymbol.isConstant()) {
+//                throw new AnalyzeError(ErrorCode.AssignToConstant, identToken.getStartPos());
+//            }
+//            if (identSymbol.getKind().equals("func")) {
+//                throw new AnalyzeError(ErrorCode.InvalidAssignment, identToken.getStartPos());
+//            }
+//            if (identSymbol.isGlobal()) {
+//                Integer globalIndex = getGlobalIndex(identToken.getValueString());
+//                Ins.add(Instruction.globa(globalIndex));
+//                InsB.add(Instruction.globaB(globalIndex));
+//            } else if (identSymbol.getKind().equals("param")) {
+//                Integer paramIndex = paramList.indexOf(identSymbol);
+//                if (funcType != TokenType.VOID) {
+//                    Ins.add(Instruction.arga(paramIndex + 1));
+//                    InsB.add(Instruction.argaB(paramIndex + 1));
+//                } else {
+//                    Ins.add(Instruction.arga(paramIndex));
+//                    InsB.add(Instruction.argaB(paramIndex));
+//                }
+//            } else {
+//                Integer localIndex = getLocalIndex(identSymbol.getLocalNum());
+//                Ins.add(Instruction.loca(localIndex));
+//                InsB.add(Instruction.locaB(localIndex));
+//            }
+//            TokenType retType = opg(insList, insListB);
+//            if (identSymbol.getRetType() != retType) {
+//                throw new AnalyzeError(ErrorCode.InvalidAssignment, identToken.getStartPos());
+//            }
+//            insList.add(Instruction.store(64));
+//            insListB.add(Instruction.store64());
+//            return TokenType.VOID;
+//        } else {
+//            if (identSymbol == null) {
+//                throw new AnalyzeError(ErrorCode.NotDeclared, identToken.getStartPos());
+//            }
+//            if (identSymbol.getKind().equals("func")) {
+//                throw new AnalyzeError(ErrorCode.InvalidAssignment, identToken.getStartPos());
+//            }
+//            if (symbol.isGlobal()) {
+//                Integer globalIndex = getGlobalIndex(identToken.getValueString());
+//                Ins.add(Instruction.globa(globalIndex));
+//                InsB.add(Instruction.globaB(globalIndex));
+//            } else if (symbol.getKind().equals("param")) {
+//                Integer paramIndex = paramList.indexOf(identSymbol);
+//                if (funcType != TokenType.VOID) {
+//                    Ins.add(Instruction.arga(paramIndex + 1));
+//                    InsB.add(Instruction.argaB(paramIndex + 1));
+//                } else {
+//                    Ins.add(Instruction.arga(paramIndex));
+//                    InsB.add(Instruction.argaB(paramIndex));
+//                }
+//            } else {
+//                Integer localIndex = getLocalIndex(identSymbol.getLocalNum());
+//                Ins.add(Instruction.loca(localIndex));
+//                InsB.add(Instruction.locaB(localIndex));
+//            }
+//            Ins.add(Instruction.load(64));
+//            InsB.add(Instruction.load64());
+//            return identSymbol.getRetType();
 //        }
 //    }
+//
+//
+//    //    group_expr -> '(' expr ')'
+//    public TokenType analyseGroupExpr(List<String> Ins, List<byte[]> InsB) throws CompileError {
+//        expect(TokenType.L_PAREN);
+//        TokenType retType = opg(Ins, InsB);
+//        expect(TokenType.R_PAREN);
+//        return retType;
+//    }
+//
+//    //    binary_operator -> '+' | '-' | '*' | '/' | '==' | '!=' | '<' | '>' | '<=' | '>='
+//    public Token analyseBinaryOperator() throws CompileError {
+//        if (check(TokenType.PLUS)) {
+//            return expect(TokenType.PLUS);
+//        } else if (check(TokenType.MINUS)) {
+//            return expect(TokenType.MINUS);
+//        } else if (check(TokenType.MUL)) {
+//            return expect(TokenType.MUL);
+//        } else if (check(TokenType.DIV)) {
+//            return expect(TokenType.DIV);
+//        } else if (check(TokenType.EQ)) {
+//            return expect(TokenType.EQ);
+//        } else if (check(TokenType.NEQ)) {
+//            return expect(TokenType.NEQ);
+//        } else if (check(TokenType.LT)) {
+//            return expect(TokenType.LT);
+//        } else if (check(TokenType.GT)) {
+//            return expect(TokenType.GT);
+//        } else if (check(TokenType.LE)) {
+//            return expect(TokenType.LE);
+//        } else if (check(TokenType.GE)) {
+//            return expect(TokenType.GE);
+//        } else if (check(TokenType.AS_KW)) {
+//            return expect(TokenType.AS_KW);
+//        } else {
+//            return null;
+//        }
+//    }
+//
+//    public TokenType analyseNegateExpr(List<String> Ins, List<byte[]> InsB) throws CompileError {
+//        Token token = expect(TokenType.MINUS);
+//        TokenType retType = analyseExpr(Ins, InsB);
+//        if (retType == TokenType.VOID)
+//            throw new AnalyzeError(ErrorCode.InvalidAssignment, token.getEndPos());
+//        if (retType == TokenType.INT) {
+//            Ins.add(Instruction.negi());
+//            InsB.add(Instruction.negiB());
+//        } else if (retType == TokenType.DOUBLE) {
+//            Ins.add(Instruction.negf());
+//            InsB.add(Instruction.negfB());
+//        }
+//        return retType;
+//    }
+
 }

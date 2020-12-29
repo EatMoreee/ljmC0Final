@@ -3,24 +3,38 @@
   <component name="ChangeListManager">
     <list default="true" id="34422e65-17fa-4c7c-a738-98aaac9a79b2" name="默认更改列表" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/test/whileIns.txt" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/ljmC0Final/test/whileIns.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/App.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/analyser/Analyser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/analyser/Func.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/analyser/Function.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/analyser/Global.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/analyser/GlobalVar.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/analyser/Symbol.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/analyser/SymbolEntry.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/analyser/VariableEntry.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ljmC0Final/test/test.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/App.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/analyser/Analyser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/analyser/Func.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/analyser/Function.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/analyser/FunctionIndex.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/analyser/Global.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/analyser/GlobalVar.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/analyser/Symbol.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/analyser/Symbol.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/analyser/SymbolEntry.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/error/ErrorCode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/error/ErrorCode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/instruction/Instruction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/instruction/Instruction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/instruction/InstructionEntry.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/instruction/InstructionEntry.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/analyser/Global.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/analyser/GlobalVar.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/analyser/Symbol.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/analyser/SymbolEntry.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/analyser/SymbolEntry.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/analyser/VariableEntry.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/test.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/test.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/whileIns.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/whileIns.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -80,6 +94,19 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="testhhh" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="test.testhhh" />
+      <module name="ljmC0Final" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="test.simpleCompile" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="ljmC0Final" />
       <extension name="coverage">
@@ -112,18 +139,50 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="test.ttt" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="ljmC0Final" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="test" />
+      <option name="MAIN_CLASS_NAME" value="test.test" />
+      <option name="METHOD_NAME" value="ttt" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <list>
       <item itemvalue="Application.App" />
+      <item itemvalue="Application.testhhh" />
       <item itemvalue="JUnit.test.simpleCompile" />
       <item itemvalue="JUnit.test.tokenizer" />
+      <item itemvalue="JUnit.test.ttt" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Application.App" />
-        <item itemvalue="JUnit.test.simpleCompile" />
+        <item itemvalue="JUnit.test.ttt" />
+        <item itemvalue="Application.testhhh" />
         <item itemvalue="JUnit.test.tokenizer" />
+        <item itemvalue="JUnit.test.simpleCompile" />
       </list>
     </recent_temporary>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -137,7 +196,9 @@
       <updated>1608808029626</updated>
       <workItem from="1608808031532" duration="3967000" />
       <workItem from="1608819840985" duration="9238000" />
-      <workItem from="1608955193585" duration="9475000" />
+      <workItem from="1608955193585" duration="11204000" />
+      <workItem from="1609051385087" duration="12235000" />
+      <workItem from="1609142719882" duration="11818000" />
     </task>
     <servers />
   </component>
@@ -149,10 +210,10 @@
       <screen x="0" y="0" width="1200" height="760" />
     </state>
     <state x="57" y="39" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1200.760@0.0.1200.760" timestamp="1608972393234" />
-    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser" timestamp="1608958836411">
+    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser" timestamp="1609253400736">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser/0.0.1200.760@0.0.1200.760" timestamp="1608958836411" />
+    <state x="706" y="76" key="#com.intellij.ide.util.MemberChooser/0.0.1200.760@0.0.1200.760" timestamp="1609253400736" />
     <state x="490" y="311" key="#com.intellij.refactoring.move.MoveHandler.SelectRefactoringDialog" timestamp="1608808062961">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
@@ -161,42 +222,42 @@
       <screen x="0" y="0" width="1200" height="760" />
     </state>
     <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1200.760@0.0.1200.760" timestamp="1608956202114" />
-    <state x="631" y="133" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1608968992230">
+    <state x="631" y="133" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1609063230791">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state x="631" y="133" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1200.760@0.0.1200.760" timestamp="1608968992230" />
-    <state width="1157" height="332" key="GridCell.Tab.0.bottom" timestamp="1608972205554">
+    <state x="631" y="133" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1200.760@0.0.1200.760" timestamp="1609063230791" />
+    <state width="277" height="145" key="GridCell.Tab.0.bottom" timestamp="1609142708554">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="1157" height="332" key="GridCell.Tab.0.bottom/0.0.1200.760@0.0.1200.760" timestamp="1608972205554" />
-    <state width="1157" height="332" key="GridCell.Tab.0.center" timestamp="1608972205554">
+    <state width="277" height="145" key="GridCell.Tab.0.bottom/0.0.1200.760@0.0.1200.760" timestamp="1609142708554" />
+    <state width="277" height="145" key="GridCell.Tab.0.center" timestamp="1609142708554">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="1157" height="332" key="GridCell.Tab.0.center/0.0.1200.760@0.0.1200.760" timestamp="1608972205554" />
-    <state width="1157" height="332" key="GridCell.Tab.0.left" timestamp="1608972205554">
+    <state width="277" height="145" key="GridCell.Tab.0.center/0.0.1200.760@0.0.1200.760" timestamp="1609142708554" />
+    <state width="277" height="145" key="GridCell.Tab.0.left" timestamp="1609142708553">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="1157" height="332" key="GridCell.Tab.0.left/0.0.1200.760@0.0.1200.760" timestamp="1608972205554" />
-    <state width="1157" height="332" key="GridCell.Tab.0.right" timestamp="1608972205554">
+    <state width="277" height="145" key="GridCell.Tab.0.left/0.0.1200.760@0.0.1200.760" timestamp="1609142708553" />
+    <state width="277" height="145" key="GridCell.Tab.0.right" timestamp="1609142708554">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="1157" height="332" key="GridCell.Tab.0.right/0.0.1200.760@0.0.1200.760" timestamp="1608972205554" />
-    <state width="543" height="242" key="GridCell.Tab.1.bottom" timestamp="1608971636891">
+    <state width="277" height="145" key="GridCell.Tab.0.right/0.0.1200.760@0.0.1200.760" timestamp="1609142708554" />
+    <state width="543" height="242" key="GridCell.Tab.1.bottom" timestamp="1608975456440">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="543" height="242" key="GridCell.Tab.1.bottom/0.0.1200.760@0.0.1200.760" timestamp="1608971636891" />
-    <state width="543" height="242" key="GridCell.Tab.1.center" timestamp="1608971636891">
+    <state width="543" height="242" key="GridCell.Tab.1.bottom/0.0.1200.760@0.0.1200.760" timestamp="1608975456440" />
+    <state width="543" height="242" key="GridCell.Tab.1.center" timestamp="1608975456440">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="543" height="242" key="GridCell.Tab.1.center/0.0.1200.760@0.0.1200.760" timestamp="1608971636891" />
-    <state width="543" height="242" key="GridCell.Tab.1.left" timestamp="1608971636891">
+    <state width="543" height="242" key="GridCell.Tab.1.center/0.0.1200.760@0.0.1200.760" timestamp="1608975456440" />
+    <state width="543" height="242" key="GridCell.Tab.1.left" timestamp="1608975456440">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="543" height="242" key="GridCell.Tab.1.left/0.0.1200.760@0.0.1200.760" timestamp="1608971636891" />
-    <state width="543" height="242" key="GridCell.Tab.1.right" timestamp="1608971636891">
+    <state width="543" height="242" key="GridCell.Tab.1.left/0.0.1200.760@0.0.1200.760" timestamp="1608975456440" />
+    <state width="543" height="242" key="GridCell.Tab.1.right" timestamp="1608975456440">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="543" height="242" key="GridCell.Tab.1.right/0.0.1200.760@0.0.1200.760" timestamp="1608971636891" />
+    <state width="543" height="242" key="GridCell.Tab.1.right/0.0.1200.760@0.0.1200.760" timestamp="1608975456440" />
     <state x="313" y="209" key="com.intellij.ide.util.TipDialog" timestamp="1608819840834">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
@@ -205,21 +266,13 @@
       <screen x="0" y="0" width="1200" height="760" />
     </state>
     <state x="305" y="282" key="com.intellij.jarRepository.RepositoryAttachDialog-DOWNLOAD/0.0.1200.760@0.0.1200.760" timestamp="1608808274667" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/analyser/Analyser.java</url>
-          <line>600</line>
-          <option name="timeStamp" value="11" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/analyser/Analyser.java</url>
-          <line>411</line>
-          <option name="timeStamp" value="16" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <state x="605" y="6" key="refactoring.ChangeSignatureDialog" timestamp="1609141445649">
+      <screen x="0" y="0" width="1200" height="760" />
+    </state>
+    <state x="605" y="6" key="refactoring.ChangeSignatureDialog/0.0.1200.760@0.0.1200.760" timestamp="1609141445649" />
+    <state x="567" y="81" width="672" height="678" key="search.everywhere.popup" timestamp="1609252954096">
+      <screen x="0" y="0" width="1200" height="760" />
+    </state>
+    <state x="567" y="81" width="672" height="678" key="search.everywhere.popup/0.0.1200.760@0.0.1200.760" timestamp="1609252954096" />
   </component>
 </project>

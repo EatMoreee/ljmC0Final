@@ -34,6 +34,9 @@ public class test {
         }
     }
 
+
+
+
 //    @Test
 //    public void simpleCompile() throws IOException, CompileError {
 //        File file = new File("src/test/whileIns.txt");
