@@ -275,6 +275,10 @@ public class OutPut {
                 return 0x23;
             case "negi":
                 return 0x34;
+            case "itof":
+                return 0x36;
+            case "ftoi":
+                return 0x37;
         }
         return 0;
     }

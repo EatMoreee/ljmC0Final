@@ -8,6 +8,7 @@ package test;
 import analyser.Analyser;
 import error.CompileError;
 import error.TokenizeError;
+import instruction.OutPut;
 import org.junit.Test;
 import tokenizer.StringIter;
 import tokenizer.Token;
@@ -37,13 +38,17 @@ public class test {
 
 
 
-//    @Test
-//    public void simpleCompile() throws IOException, CompileError {
+    @Test
+    public void simpleCompile() throws IOException, CompileError {
+        OutPut outPut = new OutPut();
+        outPut.setInPath("src/test/whileIns.txt");
+        outPut.setOutPath("src/test/result.txt");
+        outPut.output();
 //        File file = new File("src/test/whileIns.txt");
 //        Scanner sc = new Scanner(file);
 //        StringIter it = new StringIter(sc);
 //        Tokenizer tokenizer = new Tokenizer(it);
 //        Analyser analyser = new Analyser(tokenizer);
 //        analyser.analyse("src/test/result.txt");
-//    }
+    }
 }

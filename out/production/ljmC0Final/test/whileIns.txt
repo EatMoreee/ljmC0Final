@@ -26,7 +26,7 @@ fn random() -> double {
     if result < 0 {
         result = -result;
     }
-    return (result as double / 281474976710656 as double) ;
+    return (result as double / 281474976 as double) ;
 }
 
 fn approx_exp(x: double) -> double {

@@ -40,7 +40,7 @@ public class Tokenizer {
             return lexChar();
         } else if (Character.isAlphabetic(peek) || peek == '_') {
             return lexIdentOrKeyword();
-        } else if(peek == '/'){
+        } else if (peek == '/') {
             return lexComment();
         } else {
             return lexOperatorOrUnknown();
@@ -50,25 +50,21 @@ public class Tokenizer {
     private Token lexComment() {
         Pos start = it.currentPos();
         char now = it.nextChar();
-        if(it.peekChar()!='/'){
+        if (it.peekChar() != '/') {
             return new Token(TokenType.DIV, '/', it.previousPos(), it.currentPos());
         }
-        while(true){
+        while (true) {
             token.append(now);
-            char peek = it.peekChar();
-            if(now == 10||now==13){
+            now = it.nextChar();
+            if (now == 10 || now == 13) {
                 break;
             }
-            now = it.nextChar();
         }
-        now = it.nextChar();
-        token.append(now);
-        Token t = new Token(TokenType.COMMENT, token, start, it.currentPos());
+        Token t = new Token(TokenType.COMMENT, token.toString(), start, it.currentPos());
         token.setLength(0);
         return t;
     }
 
-    //还没有实现double
     private Token lexUIntOrDouble() throws TokenizeError {
         token.setLength(0);
         Pos start = it.currentPos();
@@ -82,7 +78,7 @@ public class Tokenizer {
         }
         if (it.peekChar() != '.') {
             Pos tokenPos = new Pos(it.currentPos().row, it.currentPos().col - token.length());
-            return new Token(TokenType.UINT_LITERAL, Long.parseLong(token.toString()), tokenPos, it.currentPos());
+            return new Token(TokenType.UINT_LITERAL, Integer.parseInt(token.toString()), tokenPos, it.currentPos());
         }
         token.append(it.nextChar());
         int i = 0;
@@ -99,7 +95,7 @@ public class Tokenizer {
             if (it.peekChar() == '+' || it.peekChar() == '-')
                 token.append(it.nextChar());
             int j = 0;
-            while(Character.isDigit(it.peekChar())) {
+            while (Character.isDigit(it.peekChar())) {
                 token.append(it.nextChar());
                 j++;
             }
@@ -121,10 +117,12 @@ public class Tokenizer {
         it.nextChar();
         while (true) {
             peek = it.peekChar();
-            if(peek == '\n'||peek == '\t'||peek=='\r'){
+            if (peek == '\n' || peek == '\t' || peek == '\r') {
+                it.nextChar();
                 break;
             }
             if (peek == '"') {
+                it.nextChar();
                 break;
             }
             if (peek == '\\') {
@@ -156,7 +154,7 @@ public class Tokenizer {
         it.nextChar();
         while (true) {
             peek = it.peekChar();
-            if(peek == '\n'||peek == '\t'||peek=='\r'){
+            if (peek == '\n' || peek == '\t' || peek == '\r') {
                 break;
             }
             if (peek == '\'') {

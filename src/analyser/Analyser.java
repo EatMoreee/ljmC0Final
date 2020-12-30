@@ -293,23 +293,22 @@ public final class Analyser {
     public void init() throws AnalyzeError {
 //        先将start函数加入符号表
 //        addSymbol("_start", "func", TokenType.VOID, 0, true, true, peek().getStartPos());
-        addSymbol("getint", "func", TokenType.INT, level, true, true, currentToken.getStartPos());
+        Pos pos = new Pos(0, 0);
+        addSymbol("getint", "func", TokenType.INT, level, true, true, pos);
         funcList.add("getint");
-        addSymbol("getdouble", "func", TokenType.DOUBLE, level, true, true, currentToken.getStartPos());
+        addSymbol("getdouble", "func", TokenType.DOUBLE, level, true, true, pos);
         funcList.add("getdouble");
-        addSymbol("getchar", "func", TokenType.INT, level, true, true, currentToken.getStartPos());
+        addSymbol("getchar", "func", TokenType.INT, level, true, true, pos);
         funcList.add("getchar");
-        addSymbol("putint", "func", TokenType.INT, level, true, true, currentToken.getStartPos());
-        funcList.add("getchar");
-        addSymbol("getint", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
-        funcList.add("getchar");
-        addSymbol("putdouble", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
+        addSymbol("putint", "func", TokenType.INT, level, true, true, pos);
+        funcList.add("putint");
+        addSymbol("putdouble", "func", TokenType.VOID, level, true, true, pos);
         funcList.add("putdouble");
-        addSymbol("putstr", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
+        addSymbol("putstr", "func", TokenType.VOID, level, true, true, pos);
         funcList.add("putstr");
-        addSymbol("putln", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
+        addSymbol("putln", "func", TokenType.VOID, level, true, true, pos);
         funcList.add("putln");
-        addSymbol("_start", "func", TokenType.VOID, level, true, true, currentToken.getStartPos());
+        addSymbol("_start", "func", TokenType.VOID, level, true, true, pos);
         funcList.add("_start");
     }
 
@@ -319,9 +318,13 @@ public final class Analyser {
         expect(TokenType.FN_KW);
         Token identToken = expect(TokenType.IDENT);
         String funcName = identToken.getValueString();
+
         if (symbolTable.get(funcName) != null) {
             throw new AnalyzeError(ErrorCode.ReDefine, identToken.getStartPos());
         }
+        addSymbol(funcName, "func", null, level++, true, true, identToken.getStartPos());
+        funcList.add(funcName);
+        SymbolEntry funcSymbol = symbolTable.get(funcName);
         expect(TokenType.L_PAREN);
         if (!check(TokenType.R_PAREN)) {
             analyseFunctionParamList(funcName);
@@ -329,6 +332,7 @@ public final class Analyser {
         expect(TokenType.R_PAREN);
         expect(TokenType.ARROW);
         TokenType type = analyseTy();
+        funcSymbol.setType(type);
         if (type == TokenType.VOID) {
             allReturn = true;
         }
@@ -336,13 +340,11 @@ public final class Analyser {
         if (funcName.equals("main")) {
             hasMainFuc = true;
         }
-        addSymbol(funcName, "func", type, level++, true, true, identToken.getStartPos());
-        funcList.add(funcName);
+
 
         analyseBlockStmt(funcName, false, 0, 0, 0);
 
         if (type == TokenType.VOID) {
-            SymbolEntry funcSymbol = symbolTable.get(funcName);
             InstructionEntry instructionEntry = new InstructionEntry(("ret"));
             ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
             instructionEntries.add(instructionEntry);
@@ -675,11 +677,11 @@ public final class Analyser {
 
     public TokenType analyseTy() throws CompileError {
         if (check(TokenType.INT)) {
-            return TokenType.INT;
+            return expect(TokenType.INT).getTokenType();
         } else if (check(TokenType.VOID)) {
-            return TokenType.VOID;
+            return expect(TokenType.VOID).getTokenType();
         } else {
-            return TokenType.DOUBLE;
+            return expect(TokenType.DOUBLE).getTokenType();
         }
     }
 
@@ -815,11 +817,30 @@ public final class Analyser {
         return type;
     }
 
+    //   F -> A ( as int_ty | double_ty )
     public TokenType analyseF(String funcName) throws CompileError {
         TokenType type = analyseA(funcName);
+
         if (check(TokenType.AS_KW)) {
             expect(TokenType.AS_KW);
-            expect(TokenType.IDENT);
+            SymbolEntry funcSymbol = symbolTable.get(funcName);
+            ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
+            InstructionEntry instructionEntry;
+            if (check(TokenType.INT)) {
+                expect(TokenType.INT);
+                instructionEntry = new InstructionEntry("ftoi");
+                instructionEntries.add(instructionEntry);
+                funcSymbol.setInstructions(instructionEntries);
+                return TokenType.INT;
+            } else if (check(TokenType.DOUBLE)) {
+                expect(TokenType.DOUBLE);
+                instructionEntry = new InstructionEntry("itof");
+                instructionEntries.add(instructionEntry);
+                funcSymbol.setInstructions(instructionEntries);
+                return TokenType.DOUBLE;
+            } else {
+                throw new AnalyzeError(ErrorCode.NotDeclared, peekedToken.getStartPos());
+            }
         }
         return type;
     }
@@ -844,6 +865,7 @@ public final class Analyser {
         return type;
     }
 
+    //    I -> IDENT | UNIT | DOUBLE | func_call | '(' E ')' | IDENT = E
     public TokenType analyseI(String funcName) throws CompileError {
         SymbolEntry funcSymbol = symbolTable.get(funcName);
         ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
@@ -856,7 +878,7 @@ public final class Analyser {
             }
             //调用函数（解决一下标准库的问题）
             if (check(TokenType.L_PAREN)) {
-                if (!entry.getType().equals("func")) {
+                if (!entry.getKind().equals("func")) {
                     throw new AnalyzeError(ErrorCode.NotDeclared, nameToken.getStartPos());
                 }
                 String callOrcallname = "call";
@@ -871,7 +893,7 @@ public final class Analyser {
                 if (!check(TokenType.R_PAREN)) {
                     hasParam = true;
                     InstructionEntry instructionEntry1;
-                    if (entry.getType().equals("void")) {
+                    if (entry.getType() == TokenType.VOID) {
                         instructionEntry1 = new InstructionEntry("stackalloc", 0);
                     } else {
                         instructionEntry1 = new InstructionEntry("stackalloc", 1);
@@ -879,11 +901,10 @@ public final class Analyser {
                     instructionEntries.add(instructionEntry1);
                     funcSymbol.setInstructions(instructionEntries);
                     analyseCallParamList(funcName);
-
                 }
                 expect(TokenType.R_PAREN);
                 TokenType returnType = entry.getType();
-                if (returnType.equals("int") && !hasParam) {
+                if (returnType == TokenType.INT && !hasParam) {
                     // 生成代码
                     InstructionEntry instructionEntry1 = new InstructionEntry("stackalloc", 1);
                     instructionEntries.add(instructionEntry1);
@@ -895,7 +916,7 @@ public final class Analyser {
                     }
                     instructionEntries.add(instructionEntry2);
                     funcSymbol.setInstructions(instructionEntries);
-                } else if (returnType.equals("void") && !hasParam) {
+                } else if (returnType == TokenType.VOID && !hasParam) {
                     // 生成代码
                     InstructionEntry instructionEntry1 = new InstructionEntry("stackalloc", 0);
                     instructionEntries.add(instructionEntry1);
@@ -922,7 +943,7 @@ public final class Analyser {
             }
             //赋值
             else if (check(TokenType.ASSIGN)) {
-                if (!entry.getType().equals("int")) {
+                if (entry.getKind().equals("func")) {
                     throw new AnalyzeError(ErrorCode.NotDeclared, nameToken.getStartPos());
                 }
                 if (entry.isConstant()) {
@@ -932,7 +953,7 @@ public final class Analyser {
                 // 生成代码
                 ArrayList<String> localVars = funcSymbol.getLocVars();
                 ArrayList<String> paramVars = funcSymbol.getParamVars();
-                if (entry.getType().equals("param")) {
+                if (entry.getKind().equals("param")) {
                     int index = -1;
                     for (int i = 0; i < paramVars.size(); i++) {
                         if (paramVars.get(i).equals(name)) {
@@ -942,7 +963,7 @@ public final class Analyser {
                     if (index == -1) {
                         throw new AnalyzeError(ErrorCode.NotDeclared, peek().getStartPos());
                     }
-                    if (funcSymbol.getType().equals("void")) {
+                    if (funcSymbol.getType()== TokenType.VOID) {
                         InstructionEntry instructionEntry1 = new InstructionEntry("arga", index - 1);
                         instructionEntries.add(instructionEntry1);
                     } else {
@@ -967,7 +988,7 @@ public final class Analyser {
                 }
                 funcSymbol.setInstructions(instructionEntries);
                 TokenType type = analyseExpr(funcName);
-                if (type.equals("void")) {
+                if (type== TokenType.VOID) {
                     throw new AnalyzeError(ErrorCode.InvalidAssignment, nameToken.getStartPos());
                 }
                 // 生成代码
@@ -981,7 +1002,7 @@ public final class Analyser {
                 // 生成代码
                 ArrayList<String> localVars = funcSymbol.getLocVars();
                 ArrayList<String> paramVars = funcSymbol.getParamVars();
-                if (entry.getType().equals("param")) {
+                if (entry.getKind().equals("param")) {
                     int index = -1;
                     for (int i = 0; i < paramVars.size(); i++) {
                         if (paramVars.get(i).equals(name)) {
@@ -991,7 +1012,7 @@ public final class Analyser {
                     if (index == -1) {
                         throw new AnalyzeError(ErrorCode.NotDeclared, peek().getStartPos());
                     }
-                    if (funcSymbol.getType().equals("void")) {
+                    if (funcSymbol.getType()== TokenType.VOID) {
                         InstructionEntry instructionEntry1 = new InstructionEntry("arga", index - 1);
                         instructionEntries.add(instructionEntry1);
                     } else {
@@ -1022,13 +1043,13 @@ public final class Analyser {
         } else if (check(TokenType.UINT_LITERAL)) {
             Token token = expect(TokenType.UINT_LITERAL);
             // 生成代码
-            InstructionEntry instructionEntry1 = new InstructionEntry("push", (int) token.getValue());
+            InstructionEntry instructionEntry1 = new InstructionEntry("push", (Integer) token.getValue());
             instructionEntries.add(instructionEntry1);
             funcSymbol.setInstructions(instructionEntries);
             return TokenType.INT;
         } else if (check(TokenType.STRING_LITERAL)) {
             Token token = expect(TokenType.STRING_LITERAL);
-            String value = (String) token.getValue();
+            String value = token.getValueString();
             //计算全局变量数
             int globalVarsNum = calcGlobalVars();
             // 生成代码
@@ -1036,7 +1057,7 @@ public final class Analyser {
             instructionEntries.add(instructionEntry1);
             funcSymbol.setInstructions(instructionEntries);
             //加入符号表
-            addSymbol(value, "string", TokenType.UINT_LITERAL,0,true,true,token.getStartPos());
+            addSymbol(value, "string", TokenType.UINT_LITERAL, 0, true, true, token.getStartPos());
             return TokenType.INT;
         } else if (check(TokenType.CHAR_LITERAL)) {
             Token token = expect(TokenType.CHAR_LITERAL);
@@ -1065,10 +1086,10 @@ public final class Analyser {
     public int calcGlobalVars() {
         int globalVars = 0;
         Iterator iter = symbolTable.entrySet().iterator();
-        while(iter.hasNext()){
-            HashMap.Entry entry = (HashMap.Entry)iter.next();
+        while (iter.hasNext()) {
+            HashMap.Entry entry = (HashMap.Entry) iter.next();
             SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
-            if(!symbolEntry.getType().equals("func") && symbolEntry.getLevel() == 0){
+            if (!symbolEntry.getType().equals("func") && symbolEntry.getLevel() == 0) {
                 globalVars++;
             }
         }
@@ -1083,7 +1104,7 @@ public final class Analyser {
         }
     }
 
-    public HashMap<String,SymbolEntry> getSymbolTable() {
+    public HashMap<String, SymbolEntry> getSymbolTable() {
         return this.symbolTable;
     }
 
