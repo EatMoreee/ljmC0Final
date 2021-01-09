@@ -1,13 +1,3 @@
-fn is_digit(ch: int) -> int {
-    if ch < '0' {
-        return 0;
-    } else if ch > '9' {
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
 fn is_space(ch: int) -> int {
     if ch == ' ' {
         return 1;
@@ -32,10 +22,6 @@ fn atoi() -> int {
     }
     if c == '-' {
         neg = 1;
-        c = getchar();
-    }
-    while is_digit(c) {
-        res = res * 10 + (c - '0');
         c = getchar();
     }
     if neg {

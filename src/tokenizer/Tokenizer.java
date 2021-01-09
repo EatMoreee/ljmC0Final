@@ -120,23 +120,36 @@ public class Tokenizer {
             if (peek == '\n' || peek == '\t' || peek == '\r') {
                 it.nextChar();
                 break;
-            }
-            if (peek == '"') {
+            } else if (peek == '"') {
                 it.nextChar();
                 break;
-            }
-            if (peek == '\\') {
-                now = it.nextChar();
+            } else if (peek == '\\') {
+                it.nextChar();
                 peek = it.peekChar();
-                if (peek == '\\' || peek == '"' || peek == '\'' || peek == 'n' || peek == 'r' || peek == 't') {
-                    token.append(now);
+//                if (peek == '\\' || peek == '"' || peek == '\'' || peek == 'n' || peek == 'r' || peek == 't') {
+//                    token.append(now);
+//                }
+//                else {
+//                    it.nextChar();
+//                    break;
+//                }
+                if (peek == '\\' || peek == '"' || peek == '\'') {
+                    token.append(peek);
+                } else if (peek == 'r') {
+                    token.append('\r');
+                } else if (peek == 'n') {
+                    token.append('\n');
+                } else if (peek == 't') {
+                    token.append('\t');
                 } else {
                     it.nextChar();
                     break;
                 }
+                it.nextChar();
+            } else {
+                now = it.nextChar();
+                token.append(now);
             }
-            now = it.nextChar();
-            token.append(now);
         }
         if (token.length() != 0) {
             Token t = new Token(TokenType.STRING_LITERAL, token.toString(), start, it.currentPos());
@@ -157,22 +170,37 @@ public class Tokenizer {
                 it.nextChar();
                 break;
             }
-            if (peek == '\n' || peek == '\t' || peek == '\r') {
+            else if (peek == '\n' || peek == '\t' || peek == '\r') {
                 it.nextChar();
                 break;
             }
-            if (peek == '\\') {
-                now = it.nextChar();
+            else if (peek == '\\') {
+                it.nextChar();
                 peek = it.peekChar();
-                if (peek == '\\' || peek == '"' || peek == '\'' || peek == 'n' || peek == 'r' || peek == 't') {
-                    token.append(now);
+//                if (peek == '\\' || peek == '"' || peek == '\'' || peek == 'n' || peek == 'r' || peek == 't') {
+//                    token.append(now);
+//                }
+//                else {
+//                    it.nextChar();
+//                    break;
+//                }
+                if (peek == '\\' || peek == '"' || peek == '\'') {
+                    token.append(peek);
+                } else if (peek == 'r') {
+                    token.append('\r');
+                } else if (peek == 'n') {
+                    token.append('\n');
+                } else if (peek == 't') {
+                    token.append('\t');
                 } else {
                     it.nextChar();
                     break;
                 }
+                it.nextChar();
+            } else {
+                now = it.nextChar();
+                token.append(now);
             }
-            now = it.nextChar();
-            token.append(now);
         }
         if (token.length() != 0) {
             Token t = new Token(TokenType.CHAR_LITERAL, token.toString(), start, it.currentPos());
