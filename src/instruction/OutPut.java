@@ -28,6 +28,19 @@ public class OutPut {
     }
 
     public void output() throws IOException, CompileError {
+        try{
+            File fin=new File(inPath);        //转入的文件对象
+            BufferedReader in = new BufferedReader(new FileReader(fin));  //打开输入流
+            String s;
+            while((s = in.readLine()) != null){//读字符串
+                System.out.println(s);          //写出
+            }
+            in.close(); //关闭缓冲读入流及文件读入流的连接
+        }catch (FileNotFoundException e1){           //异常处理
+            e1.printStackTrace();
+        }catch(IOException e2){
+            e2.printStackTrace();
+        }
         Scanner sc = null;
         try {
             sc = new Scanner(new File(inPath));
