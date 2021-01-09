@@ -28,7 +28,7 @@ import java.util.*;
 public class test {
     @Test
     public void tokenizer() throws IOException, TokenizeError {
-        File file = new File("src/test/whileIns.txt");
+        File file = new File("src/test/atoi");
         Scanner sc = new Scanner(file);
         StringIter it = new StringIter(sc);
         Tokenizer tokenizer = new Tokenizer(it);
@@ -45,13 +45,13 @@ public class test {
     @Test
     public void simpleCompile() throws IOException, CompileError {
         OutPut outPut = new OutPut();
-        outPut.setInPath("src/test/input.c0");
+        outPut.setInPath("src/test/whileIns.txt");
         outPut.setOutPath("src/test/result.txt");
         outPut.output();
     }
     @Test
     public void symbolTableTest() throws FileNotFoundException, CompileError{
-        Scanner sc = new Scanner(new File("src/test/input.c0"));
+        Scanner sc = new Scanner(new File("src/test/atoi"));
         StringIter it = new StringIter(sc);
         Tokenizer tn = new Tokenizer(it);
         Analyser an = new Analyser(tn);

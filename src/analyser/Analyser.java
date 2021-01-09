@@ -495,7 +495,7 @@ public final class Analyser {
         analyseExpr(funcName);
         ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
         int loc1 = instructionEntries.size();
-        InstructionEntry endIns = instructionEntries.get(instructionEntries.size() - 1);
+        InstructionEntry endIns = instructionEntries.get(loc1 - 1);
         if (!endIns.getIns().equals("brtrue") && !endIns.getIns().equals("brfalse")) {
             InstructionEntry instructionEntry = new InstructionEntry("brture", 1);
             instructionEntries.add(instructionEntry);
@@ -606,6 +606,7 @@ public final class Analyser {
         if (type == TokenType.VOID) {
             throw new AnalyzeError(ErrorCode.InvalidAssignment, identToken.getStartPos());
         }
+
 //        加入符号表
         addSymbol(identToken.getValueString(), "var", type, level, false, false, identToken.getStartPos());
         SymbolEntry varSymbol = symbolTable.get(identToken.getValueString());

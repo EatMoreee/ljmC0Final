@@ -130,9 +130,8 @@ public class Tokenizer {
                 peek = it.peekChar();
                 if (peek == '\\' || peek == '"' || peek == '\'' || peek == 'n' || peek == 'r' || peek == 't') {
                     token.append(now);
-                    now = it.nextChar();
-                    token.append(now);
                 } else {
+                    it.nextChar();
                     break;
                 }
             }
@@ -154,10 +153,12 @@ public class Tokenizer {
         it.nextChar();
         while (true) {
             peek = it.peekChar();
-            if (peek == '\n' || peek == '\t' || peek == '\r') {
+            if (peek == '\'') {
+                it.nextChar();
                 break;
             }
-            if (peek == '\'') {
+            if (peek == '\n' || peek == '\t' || peek == '\r') {
+                it.nextChar();
                 break;
             }
             if (peek == '\\') {
@@ -165,9 +166,8 @@ public class Tokenizer {
                 peek = it.peekChar();
                 if (peek == '\\' || peek == '"' || peek == '\'' || peek == 'n' || peek == 'r' || peek == 't') {
                     token.append(now);
-                    now = it.nextChar();
-                    token.append(now);
                 } else {
+                    it.nextChar();
                     break;
                 }
             }
@@ -175,7 +175,7 @@ public class Tokenizer {
             token.append(now);
         }
         if (token.length() != 0) {
-            Token t = new Token(TokenType.STRING_LITERAL, token.toString(), start, it.currentPos());
+            Token t = new Token(TokenType.CHAR_LITERAL, token.toString(), start, it.currentPos());
             token.setLength(0);
             return t;
         }
