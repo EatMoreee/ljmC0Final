@@ -576,6 +576,7 @@ public final class Analyser {
             instructionEntries.add(instructionEntry);
             funcSymbol.setInstructions(instructionEntries);
         }
+//        System.out.println(funcSymbol.getType().toString()+' ' +retType.toString());
         if (funcSymbol.getType() != retType) {
             throw new AnalyzeError(ErrorCode.NotDeclared, token.getStartPos());
         }
@@ -810,7 +811,7 @@ public final class Analyser {
             if (op.getTokenType() == TokenType.MUL) {
                 InstructionEntry instructionEntry1 = new InstructionEntry("multi");
                 instructionEntries.add(instructionEntry1);
-            }
+            } else if (op.getTokenType() == TokenType.DIV)
             {
                 InstructionEntry instructionEntry1 = new InstructionEntry("divi");
                 instructionEntries.add(instructionEntry1);
