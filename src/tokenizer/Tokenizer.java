@@ -56,7 +56,7 @@ public class Tokenizer {
         while (true) {
             token.append(now);
             now = it.nextChar();
-            if (now == 10 || now == 13) {
+            if (now == '\n' || now == '\t'||now=='\r') {
                 break;
             }
         }
@@ -281,7 +281,7 @@ public class Tokenizer {
                     token.setLength(0);
                     return t;
                 case "boolean":
-                    t = new Token(TokenType.DOUBLE, str, start, it.currentPos());
+                    t = new Token(TokenType.BOOLEAN, str, start, it.currentPos());
                     token.setLength(0);
                     return t;
 
