@@ -499,8 +499,8 @@ public final class Analyser {
         if (!endIns.getIns().equals("brtrue") && !endIns.getIns().equals("brfalse")) {
             InstructionEntry instructionEntry = new InstructionEntry("brture", 1);
             instructionEntries.add(instructionEntry);
+            loc1++;
         }
-        loc1++;
         analyseBlockStmt(funcName, isInLoop, startLoc, endLoc, ifLayer);
         int loc2 = instructionEntries.size();
         InstructionEntry instructionEntry = new InstructionEntry("br", loc2 - loc1 + 1);
@@ -522,7 +522,6 @@ public final class Analyser {
         if (hasElse) {
             instructionEntry = new InstructionEntry("br", loc3 - loc2);
             instructionEntries.add(loc2 + 1, instructionEntry);
-            loc3++;
         }
         instructionEntry = new InstructionEntry("br", 0);
         instructionEntries.add(instructionEntry);
