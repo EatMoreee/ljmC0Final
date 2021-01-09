@@ -66,9 +66,6 @@ public class test {
             //SymbolEntry symbolEntry = symbolTable.get(symbolEntryIterator.next());
             System.out.print(String.format("%s %s %s %d %s\n", name, symbolEntry.getKind(), symbolEntry.getType(), symbolEntry.getLevel(),symbolEntry.isGlobal()));
         }
-        if(!an.hasMainFuc){
-            throw new AnalyzeError(ErrorCode.NoMainFunc,new Pos(0,0));
-        }
     }
 }
 
