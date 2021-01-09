@@ -1093,7 +1093,7 @@ public final class Analyser {
         while (iter.hasNext()) {
             HashMap.Entry entry = (HashMap.Entry) iter.next();
             SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
-            if (!symbolEntry.getType().equals("func") && symbolEntry.getLevel() == 0) {
+            if (!symbolEntry.getKind().equals("func") && symbolEntry.getLevel() == 0) {
                 globalVars++;
             }
         }

@@ -28,7 +28,7 @@ import java.util.*;
 public class test {
     @Test
     public void tokenizer() throws IOException, TokenizeError {
-        File file = new File("src/test/atoi");
+        File file = new File("src/test/whileIns.txt");
         Scanner sc = new Scanner(file);
         StringIter it = new StringIter(sc);
         Tokenizer tokenizer = new Tokenizer(it);
@@ -45,7 +45,7 @@ public class test {
     @Test
     public void simpleCompile() throws IOException, CompileError {
         OutPut outPut = new OutPut();
-        outPut.setInPath("src/test/fastpow.txt");
+        outPut.setInPath("src/test/ljm.txt");
         outPut.setOutPath("src/test/result.txt");
         outPut.output();
     }
