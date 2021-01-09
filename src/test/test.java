@@ -45,7 +45,7 @@ public class test {
     @Test
     public void simpleCompile() throws IOException, CompileError {
         OutPut outPut = new OutPut();
-        outPut.setInPath("src/test/whileIns.txt");
+        outPut.setInPath("src/test/atoi");
         outPut.setOutPath("src/test/result.txt");
         outPut.output();
     }

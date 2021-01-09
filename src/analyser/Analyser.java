@@ -503,7 +503,7 @@ public final class Analyser {
         analyseBlockStmt(funcName, isInLoop, startLoc, endLoc, ifLayer);
         int loc2 = instructionEntries.size();
         InstructionEntry instructionEntry = new InstructionEntry("br", loc2 - loc1 + 1);
-        instructionEntries.add(instructionEntry);
+        instructionEntries.add(loc1,instructionEntry);
         boolean hasElse = false;
         if (check(TokenType.ELSE_KW)) {
             expect(TokenType.ELSE_KW);
@@ -535,6 +535,7 @@ public final class Analyser {
         InstructionEntry instructionEntry = new InstructionEntry("br", 0);
         instructionEntries.add(instructionEntry);
         int loc1 = instructionEntries.size();
+        System.out.println("loc1:" + loc1);
         funcSymbol.setInstructions(instructionEntries);
         analyseExpr(funcName);
         instructionEntries = funcSymbol.getInstructions();
@@ -544,6 +545,7 @@ public final class Analyser {
             instructionEntries.add(instructionEntry);
         }
         int loc2 = instructionEntries.size();
+        System.out.println("loc2:" + loc2);
         funcSymbol.setInstructions(instructionEntries);
         analyseBlockStmt(funcName, true, loc1, loc2, 0);
         instructionEntries = funcSymbol.getInstructions();
