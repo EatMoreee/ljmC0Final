@@ -42,9 +42,9 @@ public class OutPut {
         Iterator iter = symbolTable.entrySet().iterator();
         int top = 0;
         int trueGlobalVarsCount = 0;
-        Global[] globals = new Global[1000];
+        Global[] globals = new Global[10010];
         int globalCount = 0;
-        Function[] functions = new Function[1000];
+        Function[] functions = new Function[10010];
         int functionCount = 0;
         while(iter.hasNext()){
             HashMap.Entry entry = (HashMap.Entry)iter.next();
