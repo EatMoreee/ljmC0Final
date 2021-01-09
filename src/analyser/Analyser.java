@@ -300,7 +300,7 @@ public final class Analyser {
         funcList.add("getdouble");
         addSymbol("getchar", "func", TokenType.INT, level, true, true, pos);
         funcList.add("getchar");
-        addSymbol("putint", "func", TokenType.INT, level, true, true, pos);
+        addSymbol("putint", "func", TokenType.VOID, level, true, true, pos);
         funcList.add("putint");
         addSymbol("putdouble", "func", TokenType.VOID, level, true, true, pos);
         funcList.add("putdouble");
