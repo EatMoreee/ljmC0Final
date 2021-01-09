@@ -63,12 +63,6 @@ public class test {
         Tokenizer tn = new Tokenizer(it);
         Analyser an = new Analyser(tn);
         an.analyse();
-//        Map map = new HashMap();
-//        Iterator iter = map.entrySet().iterator();
-//        while (iter.hasNext()) {
-//        Map.Entry entry = (Map.Entry) iter.next();
-//        Object key = entry.getKey();
-//        Object val = entry.getValue();
 
         HashMap<String, SymbolEntry> symbolTable = an.getSymbolTable();
         Iterator iter = symbolTable.entrySet().iterator();

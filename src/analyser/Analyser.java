@@ -276,30 +276,18 @@ public final class Analyser {
                 analyseDeclStmt("_start");
             }
         }
+        if(!hasMainFuc){
+            throw new AnalyzeError(ErrorCode.NoMainFunc,peekedToken.getStartPos());
+        }
         expect(TokenType.EOF);
         SymbolEntry startSymbol = symbolTable.get("_start");
-        Iterator iter = symbolTable.entrySet().iterator();
         ArrayList<InstructionEntry> instructionEntries = startSymbol.getInstructions();
-        while(iter.hasNext()){
-            HashMap.Entry entry = (HashMap.Entry)iter.next();
-            String name1 = entry.getKey().toString();
-            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
-            if(symbolEntry1.getType().equals("func") && name1.equals("main")){
-                InstructionEntry instructionEntry = new InstructionEntry("stackalloc", 0);
-                instructionEntries.add(instructionEntry);
-                InstructionEntry instructionEntry1 = new InstructionEntry("call", getFuncIndex("main") - 8);
-                instructionEntries.add(instructionEntry1);
-            }
-        }
-        SymbolEntry start = symbolTable.get("_start");
-        start.setInstructions(instructionEntries);
-//        InstructionEntry instructionEntry = new InstructionEntry("stackalloc", 0);
-//        ArrayList<InstructionEntry> instructionEntries = startSymbol.getInstructions();
-//        instructionEntries.add(instructionEntry);
-//        InstructionEntry instructionEntry1 = new InstructionEntry("call", getFuncIndex("main"));
-//        instructionEntries.add(instructionEntry1);
-//        startSymbol.setInstructions(instructionEntries);
-
+        InstructionEntry instructionEntry = new InstructionEntry("stackalloc", 0);
+        instructionEntries.add(instructionEntry);
+        InstructionEntry instructionEntry1 = new InstructionEntry("call", getFuncIndex("main") - 8);
+        instructionEntries.add(instructionEntry1);
+        startSymbol.setInstructions(instructionEntries);
+        System.out.println("分析完成");
     }
 
     public void init() throws AnalyzeError {
@@ -316,6 +304,8 @@ public final class Analyser {
         funcList.add("putint");
         addSymbol("putdouble", "func", TokenType.VOID, level, true, true, pos);
         funcList.add("putdouble");
+        addSymbol("putchar", "func", TokenType.VOID, level, true, true, pos);
+        funcList.add("putchar");
         addSymbol("putstr", "func", TokenType.VOID, level, true, true, pos);
         funcList.add("putstr");
         addSymbol("putln", "func", TokenType.VOID, level, true, true, pos);
@@ -977,10 +967,10 @@ public final class Analyser {
                         throw new AnalyzeError(ErrorCode.NotDeclared, peek().getStartPos());
                     }
                     if (funcSymbol.getType()== TokenType.VOID) {
-                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index - 1);
+                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index);
                         instructionEntries.add(instructionEntry1);
                     } else {
-                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index);
+                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index+1);
                         instructionEntries.add(instructionEntry1);
                     }
                 } else {
@@ -1026,10 +1016,10 @@ public final class Analyser {
                         throw new AnalyzeError(ErrorCode.NotDeclared, peek().getStartPos());
                     }
                     if (funcSymbol.getType()== TokenType.VOID) {
-                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index - 1);
+                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index);
                         instructionEntries.add(instructionEntry1);
                     } else {
-                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index);
+                        InstructionEntry instructionEntry1 = new InstructionEntry("arga", index+1);
                         instructionEntries.add(instructionEntry1);
                     }
                 } else {
@@ -1120,360 +1110,4 @@ public final class Analyser {
     public HashMap<String, SymbolEntry> getSymbolTable() {
         return this.symbolTable;
     }
-
-
-//    //    expr ->
-////    operator_expr
-////    | negate_expr
-////    | assign_expr
-////    | as_expr
-////    | call_expr
-////    | literal_expr
-////    | ident_expr
-////    | group_expr
-//    public TokenType analyseExpr(String funcName) throws CompileError {
-//        TokenType tokenType;
-//        if (check(TokenType.MINUS)) {
-//            tokenType = analyseNegateExpr(Ins, InsB);
-//        } else if (check(TokenType.L_PAREN)) {
-//            tokenType = analyseGroupExpr(Ins, InsB);
-//        }
-////        literal_expr -> UINT_LITERAL | DOUBLE_LITERAL | STRING_LITERAL
-//        else if (check(TokenType.UINT_LITERAL)) {
-//            Token token = expect(TokenType.UINT_LITERAL);
-//            Ins.add(Instruction.push((Long) token.getValue()));
-//            InsB.add(Instruction.pushB((Long) token.getValue()));
-//            return TokenType.INT;
-//        } else if (check(TokenType.DOUBLE_LITERAL)) {
-//            Token token = expect(TokenType.DOUBLE_LITERAL);
-//            Ins.add(Instruction.pushd((Double) token.getValue()));
-//            InsB.add(Instruction.pushdB((Double) token.getValue()));
-//            return TokenType.DOUBLE;
-//        } else if (check(TokenType.STRING_LITERAL)) {
-//            Token token = expect(TokenType.STRING_LITERAL);
-//            String string = token.getValueString();
-//            GlobalVar globalVar = new GlobalVar();
-//            globalVar.setName(string);
-//            globalVar.setIsConst(Instruction.toBinary(1, 8));
-//            globalVar.setValue(convertToBin(string));
-//            globalVar.setConstBytes(Instruction.intToBytes(1, 1));
-//            globalVar.setValueBytes(string.getBytes());
-//            Integer globalIndex = getGlobalIndex(token.getValueString());
-//            if (globalIndex < 0) {
-//                globalVarList.add(globalVar);
-//                globalIndex = globalVarList.size() - 1;
-//            }
-//            Ins.add(Instruction.push(globalIndex));
-//            InsB.add(Instruction.pushB(globalIndex));
-//            return TokenType.INT;
-//        } else {
-//            tokenType = analyseAssignOrCallOrIdentExpr(Ins, InsB);
-//        }
-//        return tokenType;
-//    }
-//
-//
-//    public TokenType analyseAssignOrCallOrIdentExpr(List<String> Ins, List<byte[]> InsB) throws CompileError {
-//        Token identToken = expect(TokenType.IDENT);
-//        Symbol symbol = new Symbol();
-//        symbol.setToken(identToken);
-//        Symbol identSymbol = getSymbol(symbol);
-////        call_expr -> IDENT '(' call_param_list? ')'
-////        call_param_list -> expr (',' expr)*
-//        if (check(TokenType.L_PAREN)) {
-//            expect(TokenType.L_PAREN);
-//            if (identSymbol == null) {
-//                String funcName = identToken.getValueString();
-//                GlobalVar globalVar;
-//                Integer globalIndex;
-//                switch (funcName) {
-//                    case "getint":
-//                        expect(TokenType.R_PAREN);
-//                        globalVar = new GlobalVar();
-//                        globalVar.setName("getint");
-//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
-//                        globalVar.setValue(convertToBin("getint"));
-//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
-//                        globalVar.setValueBytes(funcName.getBytes());
-//                        globalVarList.add(globalVar);
-//                        globalIndex = globalVarList.size() - 1;
-//                        Ins.add(Instruction.stackalloc(1));
-//                        InsB.add(Instruction.stackallocB(1));
-//                        Ins.add(Instruction.callname(globalIndex));
-//                        InsB.add(Instruction.callnameB(globalIndex));
-//                        return TokenType.INT;
-//                    case "getchar":
-//                        expect(TokenType.R_PAREN);
-//                        globalVar = new GlobalVar();
-//                        globalVar.setName("getchar");
-//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
-//                        globalVar.setValue(convertToBin("getchar"));
-//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
-//                        globalVar.setValueBytes(funcName.getBytes());
-//                        globalVarList.add(globalVar);
-//                        globalIndex = globalVarList.size() - 1;
-//                        Ins.add(Instruction.stackalloc(1));
-//                        InsB.add(Instruction.stackallocB(1));
-//                        Ins.add(Instruction.callname(globalIndex));
-//                        InsB.add(Instruction.callnameB(globalIndex));
-//                        return TokenType.INT;
-//                    case "getdouble":
-//                        expect(TokenType.R_PAREN);
-//                        globalVar = new GlobalVar();
-//                        globalVar.setName("getdouble");
-//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
-//                        globalVar.setValue(convertToBin("getdouble"));
-//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
-//                        globalVar.setValueBytes(funcName.getBytes());
-//                        globalVarList.add(globalVar);
-//                        globalIndex = globalVarList.size() - 1;
-//                        Ins.add(Instruction.stackalloc(1));
-//                        InsB.add(Instruction.stackallocB(1));
-//                        Ins.add(Instruction.callname(globalIndex));
-//                        InsB.add(Instruction.callnameB(globalIndex));
-//                        return TokenType.DOUBLE;
-//                    case "putint":
-//                        Ins.add(Instruction.stackalloc(0));
-//                        InsB.add(Instruction.stackallocB(0));
-//                        TokenType ret = opg(Ins, InsB);
-//                        if (ret != TokenType.INT)
-//                            throw new AnalyzeError(ErrorCode.InvalidInput, identToken.getStartPos());
-//                        expect(TokenType.R_PAREN);
-//                        globalVar = new GlobalVar();
-//                        globalVar.setName("putint");
-//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
-//                        globalVar.setValue(convertToBin("putint"));
-//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
-//                        globalVar.setValueBytes(funcName.getBytes());
-//                        globalVarList.add(globalVar);
-//                        globalIndex = globalVarList.size() - 1;
-//                        Ins.add(Instruction.callname(globalIndex));
-//                        InsB.add(Instruction.callnameB(globalIndex));
-//                        return TokenType.VOID;
-//                    case "putdouble":
-//                        Ins.add(Instruction.stackalloc(0));
-//                        InsB.add(Instruction.stackallocB(0));
-//                        ret = opg(Ins, InsB);
-//                        if (ret != TokenType.INT)
-//                            throw new AnalyzeError(ErrorCode.InvalidInput, identToken.getStartPos());
-//                        expect(TokenType.R_PAREN);
-//                        globalVar = new GlobalVar();
-//                        globalVar.setName("putdouble");
-//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
-//                        globalVar.setValue(convertToBin("putdouble"));
-//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
-//                        globalVar.setValueBytes(funcName.getBytes());
-//                        globalVarList.add(globalVar);
-//                        globalIndex = globalVarList.size() - 1;
-//                        Ins.add(Instruction.callname(globalIndex));
-//                        InsB.add(Instruction.callnameB(globalIndex));
-//                        return TokenType.VOID;
-//                    case "putchar":
-//                        Ins.add(Instruction.stackalloc(0));
-//                        InsB.add(Instruction.stackallocB(0));
-//                        expect(TokenType.R_PAREN);
-//                        ret = opg(Ins, InsB);
-//                        if (ret != TokenType.INT)
-//                            throw new AnalyzeError(ErrorCode.InvalidInput, identToken.getStartPos());
-//                        globalVar = new GlobalVar();
-//                        globalVar.setName("putchar");
-//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
-//                        globalVar.setValue(convertToBin("putchar"));
-//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
-//                        globalVar.setValueBytes(funcName.getBytes());
-//                        globalVarList.add(globalVar);
-//                        globalIndex = globalVarList.size() - 1;
-//                        Ins.add(Instruction.callname(globalIndex));
-//                        InsB.add(Instruction.callnameB(globalIndex));
-//                        return TokenType.VOID;
-//                    case "putstr":
-//                        Ins.add(Instruction.stackalloc(0));
-//                        InsB.add(Instruction.stackallocB(0));
-//                        expect(TokenType.R_PAREN);
-//                        ret = opg(Ins, InsB);
-//                        if (ret != TokenType.INT)
-//                            throw new AnalyzeError(ErrorCode.InvalidInput, identToken.getStartPos());
-//                        globalVar = new GlobalVar();
-//                        globalVar.setName("putstr");
-//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
-//                        globalVar.setValue(convertToBin("putstr"));
-//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
-//                        globalVar.setValueBytes(funcName.getBytes());
-//                        globalVarList.add(globalVar);
-//                        globalIndex = globalVarList.size() - 1;
-//                        Ins.add(Instruction.callname(globalIndex));
-//                        InsB.add(Instruction.callnameB(globalIndex));
-//                        return TokenType.VOID;
-//                    case "putln":
-//                        Ins.add(Instruction.stackalloc(0));
-//                        InsB.add(Instruction.stackallocB(0));
-//                        expect(TokenType.R_PAREN);
-//                        globalVar = new GlobalVar();
-//                        globalVar.setName("putln");
-//                        globalVar.setIsConst(Instruction.toBinary(1, 8));
-//                        globalVar.setValue(convertToBin("putln"));
-//                        globalVar.setConstBytes(Instruction.intToBytes(1, 1));
-//                        globalVar.setValueBytes(funcName.getBytes());
-//                        globalVarList.add(globalVar);
-//                        globalIndex = globalVarList.size() - 1;
-//                        Ins.add(Instruction.callname(globalIndex));
-//                        InsB.add(Instruction.callnameB(globalIndex));
-//                        return TokenType.VOID;
-//                    default:
-//                        throw new AnalyzeError(ErrorCode.InvalidIdentifier, identToken.getStartPos());
-//                }
-//            } else {
-//                if (!identSymbol.getKind().equals("var")) {
-//                    throw new AnalyzeError(ErrorCode.DuplicateDeclaration, identToken.getStartPos());
-//                }
-//                expect(TokenType.L_PAREN);
-//                if (identSymbol.getRetType() == TokenType.VOID) {
-//                    Ins.add(Instruction.stackalloc(0));
-//                    InsB.add(Instruction.stackallocB(0));
-//                } else {
-//                    Ins.add(Instruction.stackalloc(1));
-//                    InsB.add(Instruction.stackallocB(1));
-//                }
-//                if (check(TokenType.UINT_LITERAL) || check(TokenType.DOUBLE_LITERAL) || check(TokenType.STRING_LITERAL) || check(TokenType.IDENT) || check(TokenType.L_PAREN) || check(TokenType.MINUS)) {
-//                    int i = 0;
-//                    List<TokenType> paramTypes = identSymbol.getParamsType();
-//                    do {
-//                        if (i == paramTypes.size())
-//                            throw new AnalyzeError(ErrorCode.InvalidInput, peek().getStartPos());
-//                        Token peekToken = peek();
-//                        TokenType ret = opg(Ins, InsB);
-//                        if (ret != paramTypes.get(i))
-//                            throw new AnalyzeError(ErrorCode.InvalidInput, peekToken.getStartPos());
-//                        i++;
-//                    } while (nextIf(TokenType.COMMA) != null);
-//                }
-//                Integer funcIndex = funcList.indexOf((findFunc(identToken.getValueString())));
-//                Ins.add(Instruction.call(funcIndex));
-//                InsB.add(Instruction.callB(funcIndex));
-//            }
-//            expect(TokenType.R_PAREN);
-//            return identSymbol.getRetType();
-//        }
-////        assign_expr -> l_expr '=' expr
-////        l_expr -> IDENT
-//        else if (check(TokenType.ASSIGN)) {
-//            expect(TokenType.ASSIGN);
-//            if (identSymbol == null) {
-//                throw new AnalyzeError(ErrorCode.NotDeclared, identToken.getStartPos());
-//            }
-//            if (identSymbol.isConstant()) {
-//                throw new AnalyzeError(ErrorCode.AssignToConstant, identToken.getStartPos());
-//            }
-//            if (identSymbol.getKind().equals("func")) {
-//                throw new AnalyzeError(ErrorCode.InvalidAssignment, identToken.getStartPos());
-//            }
-//            if (identSymbol.isGlobal()) {
-//                Integer globalIndex = getGlobalIndex(identToken.getValueString());
-//                Ins.add(Instruction.globa(globalIndex));
-//                InsB.add(Instruction.globaB(globalIndex));
-//            } else if (identSymbol.getKind().equals("param")) {
-//                Integer paramIndex = paramList.indexOf(identSymbol);
-//                if (funcType != TokenType.VOID) {
-//                    Ins.add(Instruction.arga(paramIndex + 1));
-//                    InsB.add(Instruction.argaB(paramIndex + 1));
-//                } else {
-//                    Ins.add(Instruction.arga(paramIndex));
-//                    InsB.add(Instruction.argaB(paramIndex));
-//                }
-//            } else {
-//                Integer localIndex = getLocalIndex(identSymbol.getLocalNum());
-//                Ins.add(Instruction.loca(localIndex));
-//                InsB.add(Instruction.locaB(localIndex));
-//            }
-//            TokenType retType = opg(insList, insListB);
-//            if (identSymbol.getRetType() != retType) {
-//                throw new AnalyzeError(ErrorCode.InvalidAssignment, identToken.getStartPos());
-//            }
-//            insList.add(Instruction.store(64));
-//            insListB.add(Instruction.store64());
-//            return TokenType.VOID;
-//        } else {
-//            if (identSymbol == null) {
-//                throw new AnalyzeError(ErrorCode.NotDeclared, identToken.getStartPos());
-//            }
-//            if (identSymbol.getKind().equals("func")) {
-//                throw new AnalyzeError(ErrorCode.InvalidAssignment, identToken.getStartPos());
-//            }
-//            if (symbol.isGlobal()) {
-//                Integer globalIndex = getGlobalIndex(identToken.getValueString());
-//                Ins.add(Instruction.globa(globalIndex));
-//                InsB.add(Instruction.globaB(globalIndex));
-//            } else if (symbol.getKind().equals("param")) {
-//                Integer paramIndex = paramList.indexOf(identSymbol);
-//                if (funcType != TokenType.VOID) {
-//                    Ins.add(Instruction.arga(paramIndex + 1));
-//                    InsB.add(Instruction.argaB(paramIndex + 1));
-//                } else {
-//                    Ins.add(Instruction.arga(paramIndex));
-//                    InsB.add(Instruction.argaB(paramIndex));
-//                }
-//            } else {
-//                Integer localIndex = getLocalIndex(identSymbol.getLocalNum());
-//                Ins.add(Instruction.loca(localIndex));
-//                InsB.add(Instruction.locaB(localIndex));
-//            }
-//            Ins.add(Instruction.load(64));
-//            InsB.add(Instruction.load64());
-//            return identSymbol.getRetType();
-//        }
-//    }
-//
-//
-//    //    group_expr -> '(' expr ')'
-//    public TokenType analyseGroupExpr(List<String> Ins, List<byte[]> InsB) throws CompileError {
-//        expect(TokenType.L_PAREN);
-//        TokenType retType = opg(Ins, InsB);
-//        expect(TokenType.R_PAREN);
-//        return retType;
-//    }
-//
-//    //    binary_operator -> '+' | '-' | '*' | '/' | '==' | '!=' | '<' | '>' | '<=' | '>='
-//    public Token analyseBinaryOperator() throws CompileError {
-//        if (check(TokenType.PLUS)) {
-//            return expect(TokenType.PLUS);
-//        } else if (check(TokenType.MINUS)) {
-//            return expect(TokenType.MINUS);
-//        } else if (check(TokenType.MUL)) {
-//            return expect(TokenType.MUL);
-//        } else if (check(TokenType.DIV)) {
-//            return expect(TokenType.DIV);
-//        } else if (check(TokenType.EQ)) {
-//            return expect(TokenType.EQ);
-//        } else if (check(TokenType.NEQ)) {
-//            return expect(TokenType.NEQ);
-//        } else if (check(TokenType.LT)) {
-//            return expect(TokenType.LT);
-//        } else if (check(TokenType.GT)) {
-//            return expect(TokenType.GT);
-//        } else if (check(TokenType.LE)) {
-//            return expect(TokenType.LE);
-//        } else if (check(TokenType.GE)) {
-//            return expect(TokenType.GE);
-//        } else if (check(TokenType.AS_KW)) {
-//            return expect(TokenType.AS_KW);
-//        } else {
-//            return null;
-//        }
-//    }
-//
-//    public TokenType analyseNegateExpr(List<String> Ins, List<byte[]> InsB) throws CompileError {
-//        Token token = expect(TokenType.MINUS);
-//        TokenType retType = analyseExpr(Ins, InsB);
-//        if (retType == TokenType.VOID)
-//            throw new AnalyzeError(ErrorCode.InvalidAssignment, token.getEndPos());
-//        if (retType == TokenType.INT) {
-//            Ins.add(Instruction.negi());
-//            InsB.add(Instruction.negiB());
-//        } else if (retType == TokenType.DOUBLE) {
-//            Ins.add(Instruction.negf());
-//            InsB.add(Instruction.negfB());
-//        }
-//        return retType;
-//    }
-
 }

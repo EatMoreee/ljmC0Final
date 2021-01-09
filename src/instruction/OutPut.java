@@ -44,13 +44,6 @@ public class OutPut {
         }
         HashMap<String, SymbolEntry> symbolTable = an.getSymbolTable();
         Iterator iter = symbolTable.entrySet().iterator();
-        while(iter.hasNext()){
-            HashMap.Entry entry = (HashMap.Entry)iter.next();
-            String name = entry.getKey().toString();
-            SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
-            //SymbolEntry symbolEntry = symbolTable.get(symbolEntryIterator.next());
-            System.out.print(String.format("%s %s %s %d\n", name, symbolEntry.getKind(), symbolEntry.getType(), symbolEntry.getLevel()));
-        }
         int top = 0;
         int trueGlobalVarsCount = 0;
         Global[] globals = new Global[1000];
@@ -60,9 +53,9 @@ public class OutPut {
         while(iter.hasNext()){
             HashMap.Entry entry = (HashMap.Entry)iter.next();
             SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
-            if(!symbolEntry.getType().equals("func")){
+            if(!symbolEntry.getKind().equals("func")){
                 trueGlobalVarsCount++;
-                if(symbolEntry.getType().equals("string")){
+                if(symbolEntry.getKind().equals("string")){
                     String name = (String)entry.getKey();
                     System.out.println(name);
                     globals[top++] = new Global(symbolEntry.isConstant() ? 1 : 0, name.length(), name);
@@ -78,7 +71,7 @@ public class OutPut {
             HashMap.Entry entry = (HashMap.Entry)iter.next();
             String name = entry.getKey().toString();
             SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
-            if(symbolEntry.getType().equals("func")){
+            if(symbolEntry.getKind().equals("func")){
                 int funcIndex = an.getFuncIndex(name);
                 globals[funcIndex + globalVarsEnd] = new Global(1, name.length(), name);
                 top++;
@@ -94,7 +87,7 @@ public class OutPut {
             String funcName = globals[i].getValueItem();
             SymbolEntry funcEntry = symbolTable.get(funcName);
             int ret_slots = 0;
-            if(funcEntry.getType().equals("int")){
+            if(funcEntry.getType()== TokenType.INT){
                 ret_slots = 1;
             }
             int param_slots = funcEntry.getParamVars().size();
@@ -105,7 +98,7 @@ public class OutPut {
                 functions[funcTableTop++] = new Function(i, 0, 0, 0, body_count, instructionEntries);
             }
             else{
-                functions[funcTableTop++] = new Function(i, ret_slots, param_slots - 1, loc_slots, body_count, instructionEntries);
+                functions[funcTableTop++] = new Function(i, ret_slots, param_slots, loc_slots, body_count, instructionEntries);
             }
         }
         functionCount = funcTableTop;

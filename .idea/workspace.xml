@@ -74,7 +74,7 @@
       <recent name="D:\buaa\2020autumn\编译原理与技术\大作业\ljmC0Final" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.test.symbolTableTest">
+  <component name="RunManager" selected="JUnit.test.simpleCompile">
     <configuration name="App" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="App" />
       <module name="ljmC0Final" />
@@ -155,9 +155,9 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.test.simpleCompile" />
         <item itemvalue="JUnit.test.symbolTableTest" />
         <item itemvalue="JUnit.test.tokenizer" />
-        <item itemvalue="JUnit.test.simpleCompile" />
         <item itemvalue="JUnit.test" />
         <item itemvalue="Application.App" />
       </list>
@@ -189,7 +189,7 @@
       <workItem from="1608819840985" duration="9238000" />
       <workItem from="1608955193585" duration="11204000" />
       <workItem from="1609051385087" duration="12235000" />
-      <workItem from="1609142719882" duration="26728000" />
+      <workItem from="1609142719882" duration="31055000" />
     </task>
     <servers />
   </component>
@@ -221,22 +221,22 @@
       <screen x="0" y="0" width="1200" height="760" />
     </state>
     <state x="631" y="133" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1200.760@0.0.1200.760" timestamp="1609063230791" />
-    <state width="555" height="262" key="GridCell.Tab.0.bottom" timestamp="1610177727463">
+    <state width="555" height="186" key="GridCell.Tab.0.bottom" timestamp="1610182113044">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="555" height="262" key="GridCell.Tab.0.bottom/0.0.1200.760@0.0.1200.760" timestamp="1610177727463" />
-    <state width="555" height="262" key="GridCell.Tab.0.center" timestamp="1610177727463">
+    <state width="555" height="186" key="GridCell.Tab.0.bottom/0.0.1200.760@0.0.1200.760" timestamp="1610182113044" />
+    <state width="555" height="186" key="GridCell.Tab.0.center" timestamp="1610182113044">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="555" height="262" key="GridCell.Tab.0.center/0.0.1200.760@0.0.1200.760" timestamp="1610177727463" />
-    <state width="555" height="262" key="GridCell.Tab.0.left" timestamp="1610177727463">
+    <state width="555" height="186" key="GridCell.Tab.0.center/0.0.1200.760@0.0.1200.760" timestamp="1610182113044" />
+    <state width="555" height="186" key="GridCell.Tab.0.left" timestamp="1610182113044">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="555" height="262" key="GridCell.Tab.0.left/0.0.1200.760@0.0.1200.760" timestamp="1610177727463" />
-    <state width="555" height="262" key="GridCell.Tab.0.right" timestamp="1610177727463">
+    <state width="555" height="186" key="GridCell.Tab.0.left/0.0.1200.760@0.0.1200.760" timestamp="1610182113044" />
+    <state width="555" height="186" key="GridCell.Tab.0.right" timestamp="1610182113044">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state width="555" height="262" key="GridCell.Tab.0.right/0.0.1200.760@0.0.1200.760" timestamp="1610177727463" />
+    <state width="555" height="186" key="GridCell.Tab.0.right/0.0.1200.760@0.0.1200.760" timestamp="1610182113044" />
     <state width="1157" height="241" key="GridCell.Tab.1.bottom" timestamp="1610177524743">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
@@ -265,27 +265,27 @@
       <screen x="0" y="0" width="1200" height="760" />
     </state>
     <state x="605" y="6" key="refactoring.ChangeSignatureDialog/0.0.1200.760@0.0.1200.760" timestamp="1609141445649" />
-    <state x="567" y="81" width="672" height="678" key="search.everywhere.popup" timestamp="1609252954096">
+    <state x="568" y="81" width="672" height="678" key="search.everywhere.popup" timestamp="1610180552436">
       <screen x="0" y="0" width="1200" height="760" />
     </state>
-    <state x="567" y="81" width="672" height="678" key="search.everywhere.popup/0.0.1200.760@0.0.1200.760" timestamp="1609252954096" />
+    <state x="568" y="81" width="672" height="678" key="search.everywhere.popup/0.0.1200.760@0.0.1200.760" timestamp="1610180552436" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/analyser/Analyser.java</url>
-          <line>570</line>
+          <line>560</line>
           <option name="timeStamp" value="8" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/analyser/Analyser.java</url>
-          <line>1063</line>
+          <line>1053</line>
           <option name="timeStamp" value="18" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/analyser/Analyser.java</url>
-          <line>368</line>
+          <line>358</line>
           <option name="timeStamp" value="26" />
         </line-breakpoint>
       </breakpoints>
