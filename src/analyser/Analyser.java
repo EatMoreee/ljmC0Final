@@ -1047,7 +1047,9 @@ public final class Analyser {
         } else if (check(TokenType.UINT_LITERAL)) {
             Token token = expect(TokenType.UINT_LITERAL);
             // 生成代码
-            InstructionEntry instructionEntry1 = new InstructionEntry("push", (Integer) token.getValue());
+            Long longValue = (Long) token.getValue();
+            Integer value = longValue.intValue();
+            InstructionEntry instructionEntry1 = new InstructionEntry("push", value);
             instructionEntries.add(instructionEntry1);
             funcSymbol.setInstructions(instructionEntries);
             return TokenType.INT;

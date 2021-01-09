@@ -78,7 +78,7 @@ public class Tokenizer {
         }
         if (it.peekChar() != '.') {
             Pos tokenPos = new Pos(it.currentPos().row, it.currentPos().col - token.length());
-            return new Token(TokenType.UINT_LITERAL, Integer.parseInt(token.toString()), tokenPos, it.currentPos());
+            return new Token(TokenType.UINT_LITERAL, Long.parseLong(token.toString()), tokenPos, it.currentPos());
         }
         token.append(it.nextChar());
         int i = 0;
