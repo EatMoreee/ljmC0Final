@@ -563,25 +563,21 @@ public final class Analyser {
         SymbolEntry funcSymbol = symbolTable.get(funcName);
         InstructionEntry instructionEntry;
         Token token = expect(TokenType.RETURN_KW);
+        TokenType retType = TokenType.VOID;
         ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
 //        有返回值
-        if (check(TokenType.SEMICOLON)) {
-            expect(TokenType.SEMICOLON);
-            if (funcSymbol.getType() != TokenType.VOID) {
-                throw new AnalyzeError(ErrorCode.NotDeclared, token.getStartPos());
-            }
-        } else {
+        if (!check(TokenType.SEMICOLON)) {
             instructionEntry = new InstructionEntry("arga", 0);
             instructionEntries.add(instructionEntry);
             funcSymbol.setInstructions(instructionEntries);
-            TokenType type = analyseExpr(funcName);
+            retType = analyseExpr(funcName);
             instructionEntries = funcSymbol.getInstructions();
             instructionEntry = new InstructionEntry("store64");
             instructionEntries.add(instructionEntry);
             funcSymbol.setInstructions(instructionEntries);
-            if (funcSymbol.getType() != type) {
-                throw new AnalyzeError(ErrorCode.NotDeclared, token.getStartPos());
-            }
+        }
+        if (funcSymbol.getType() != retType) {
+            throw new AnalyzeError(ErrorCode.NotDeclared, token.getStartPos());
         }
         instructionEntries = funcSymbol.getInstructions();
         instructionEntry = new InstructionEntry("ret");
