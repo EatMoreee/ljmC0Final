@@ -349,8 +349,7 @@ public class Tokenizer {
             case '>':
                 if (it.peekChar() == '=') {
                     it.nextChar();
-                    return new Token(TokenType.GE.
-                            , ">=", it.previousPos(), it.currentPos());
+                    return new Token(TokenType.GE, ">=", it.previousPos(), it.currentPos());
                 } else {
                     return new Token(TokenType.GT, '>', it.previousPos(), it.currentPos());
                 }
