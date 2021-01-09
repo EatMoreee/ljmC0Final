@@ -27,7 +27,7 @@ public class OutPut {
         this.outPath = outPath;
     }
 
-    public void output() throws IOException {
+    public void output() throws IOException, CompileError {
         Scanner sc = null;
         try {
             sc = new Scanner(new File(inPath));
@@ -37,11 +37,7 @@ public class OutPut {
         StringIter it = new StringIter(sc);
         Tokenizer tn = new Tokenizer(it);
         Analyser an = new Analyser(tn);
-        try {
-            an.analyse();
-        } catch (CompileError compileError) {
-            compileError.printStackTrace();
-        }
+        an.analyse();
         HashMap<String, SymbolEntry> symbolTable = an.getSymbolTable();
         Iterator iter = symbolTable.entrySet().iterator();
         int top = 0;
