@@ -42,13 +42,6 @@ public class test {
     }
 
 
-    //    @Test
-//    public void simpleCompile() throws IOException, CompileError {
-//        OutPut outPut = new OutPut();
-//        outPut.setInPath("src/test/whileIns.txt");
-//        outPut.setOutPath("src/test/result.txt");
-//        outPut.output();
-//    }
     @Test
     public void simpleCompile() throws IOException, CompileError {
         OutPut outPut = new OutPut();

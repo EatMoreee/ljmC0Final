@@ -276,17 +276,29 @@ public final class Analyser {
                 analyseDeclStmt("_start");
             }
         }
-        if(!hasMainFuc){
-            throw new AnalyzeError(ErrorCode.NoMainFunc,peekedToken.getStartPos());
-        }
+//        if(!hasMainFuc){
+//            throw new AnalyzeError(ErrorCode.NoMainFunc,peekedToken.getStartPos());
+//        }
         expect(TokenType.EOF);
         SymbolEntry startSymbol = symbolTable.get("_start");
         ArrayList<InstructionEntry> instructionEntries = startSymbol.getInstructions();
-        InstructionEntry instructionEntry = new InstructionEntry("stackalloc", 0);
-        instructionEntries.add(instructionEntry);
-        InstructionEntry instructionEntry1 = new InstructionEntry("call", getFuncIndex("main") - 8);
-        instructionEntries.add(instructionEntry1);
-        startSymbol.setInstructions(instructionEntries);
+//        InstructionEntry instructionEntry = new InstructionEntry("stackalloc", 0);
+//        instructionEntries.add(instructionEntry);
+//        InstructionEntry instructionEntry1 = new InstructionEntry("call", getFuncIndex("main") - 8);
+//        instructionEntries.add(instructionEntry1);
+//        startSymbol.setInstructions(instructionEntries);
+        Iterator iter = symbolTable.entrySet().iterator();
+        while(iter.hasNext()){
+            HashMap.Entry entry = (HashMap.Entry)iter.next();
+            String name1 = entry.getKey().toString();
+            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
+            if(symbolEntry1.getKind().equals("func") && name1.equals("main")){
+                InstructionEntry instructionEntry4 = new InstructionEntry("stackalloc", 0);
+                InstructionEntry instructionEntry = new InstructionEntry("call", getFuncIndex(name1) - 8);
+                instructionEntries.add(instructionEntry4);
+                instructionEntries.add(instructionEntry);
+            }
+        }
         System.out.println("分析完成");
     }
 
