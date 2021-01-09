@@ -5,8 +5,12 @@ package test;
 //import error.TokenizeError;
 //import instruction.Instruction;
 //import org.junit.Test;
+
 import analyser.Analyser;
+import analyser.SymbolEntry;
+import error.AnalyzeError;
 import error.CompileError;
+import error.ErrorCode;
 import error.TokenizeError;
 import instruction.OutPut;
 import org.junit.Test;
@@ -14,8 +18,10 @@ import tokenizer.StringIter;
 import tokenizer.Token;
 import tokenizer.TokenType;
 import tokenizer.Tokenizer;
+import util.Pos;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
@@ -26,9 +32,9 @@ public class test {
         Scanner sc = new Scanner(file);
         StringIter it = new StringIter(sc);
         Tokenizer tokenizer = new Tokenizer(it);
-        while(true) {
+        while (true) {
             Token token = tokenizer.nextToken();
-            if(token.getTokenType() == TokenType.EOF)
+            if (token.getTokenType() == TokenType.EOF)
                 break;
             System.out.println(token.getValueString());
             System.out.println(token.toString());
@@ -36,19 +42,46 @@ public class test {
     }
 
 
-
-
+    //    @Test
+//    public void simpleCompile() throws IOException, CompileError {
+//        OutPut outPut = new OutPut();
+//        outPut.setInPath("src/test/whileIns.txt");
+//        outPut.setOutPath("src/test/result.txt");
+//        outPut.output();
+//    }
     @Test
     public void simpleCompile() throws IOException, CompileError {
         OutPut outPut = new OutPut();
-        outPut.setInPath("src/test/whileIns.txt");
+        outPut.setInPath("src/test/input.c0");
         outPut.setOutPath("src/test/result.txt");
         outPut.output();
-//        File file = new File("src/test/whileIns.txt");
-//        Scanner sc = new Scanner(file);
-//        StringIter it = new StringIter(sc);
-//        Tokenizer tokenizer = new Tokenizer(it);
-//        Analyser analyser = new Analyser(tokenizer);
-//        analyser.analyse("src/test/result.txt");
+    }
+    @Test
+    public void symbolTableTest() throws FileNotFoundException, CompileError{
+        Scanner sc = new Scanner(new File("src/test/input.c0"));
+        StringIter it = new StringIter(sc);
+        Tokenizer tn = new Tokenizer(it);
+        Analyser an = new Analyser(tn);
+        an.analyse();
+//        Map map = new HashMap();
+//        Iterator iter = map.entrySet().iterator();
+//        while (iter.hasNext()) {
+//        Map.Entry entry = (Map.Entry) iter.next();
+//        Object key = entry.getKey();
+//        Object val = entry.getValue();
+
+        HashMap<String, SymbolEntry> symbolTable = an.getSymbolTable();
+        Iterator iter = symbolTable.entrySet().iterator();
+        while(iter.hasNext()){
+            HashMap.Entry entry = (HashMap.Entry)iter.next();
+            String name = entry.getKey().toString();
+            SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
+            //SymbolEntry symbolEntry = symbolTable.get(symbolEntryIterator.next());
+            System.out.print(String.format("%s %s %s %d %s\n", name, symbolEntry.getKind(), symbolEntry.getType(), symbolEntry.getLevel(),symbolEntry.isGlobal()));
+        }
+        if(!an.hasMainFuc){
+            throw new AnalyzeError(ErrorCode.NoMainFunc,new Pos(0,0));
+        }
     }
 }
+

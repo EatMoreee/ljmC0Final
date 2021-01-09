@@ -27,10 +27,10 @@ public final class Analyser {
     HashMap<String, SymbolEntry> symbolTable = new HashMap<>();
 
 
-    int level = 0;
+    public int level = 0;
 
     //    判断是否有一个名为 main 的函数作为程序入口
-    boolean hasMainFuc = false;
+    public boolean hasMainFuc = false;
     //    判断是否全部返回
     boolean allReturn = false;
 
@@ -276,18 +276,30 @@ public final class Analyser {
                 analyseDeclStmt("_start");
             }
         }
-        if (!hasMainFuc) {
-            throw new AnalyzeError(ErrorCode.NoEnd, peek().getStartPos());
-        }
-        SymbolEntry startSymbol = symbolTable.get("_start");
-        InstructionEntry instructionEntry = new InstructionEntry("stackalloc", 0);
-        ArrayList<InstructionEntry> instructionEntries = startSymbol.getInstructions();
-        instructionEntries.add(instructionEntry);
-        InstructionEntry instructionEntry1 = new InstructionEntry("call", getFuncIndex("main"));
-        instructionEntries.add(instructionEntry1);
-        startSymbol.setInstructions(instructionEntries);
-
         expect(TokenType.EOF);
+        SymbolEntry startSymbol = symbolTable.get("_start");
+        Iterator iter = symbolTable.entrySet().iterator();
+        ArrayList<InstructionEntry> instructionEntries = startSymbol.getInstructions();
+        while(iter.hasNext()){
+            HashMap.Entry entry = (HashMap.Entry)iter.next();
+            String name1 = entry.getKey().toString();
+            SymbolEntry symbolEntry1 = (SymbolEntry) entry.getValue();
+            if(symbolEntry1.getType().equals("func") && name1.equals("main")){
+                InstructionEntry instructionEntry = new InstructionEntry("stackalloc", 0);
+                instructionEntries.add(instructionEntry);
+                InstructionEntry instructionEntry1 = new InstructionEntry("call", getFuncIndex("main") - 8);
+                instructionEntries.add(instructionEntry1);
+            }
+        }
+        SymbolEntry start = symbolTable.get("_start");
+        start.setInstructions(instructionEntries);
+//        InstructionEntry instructionEntry = new InstructionEntry("stackalloc", 0);
+//        ArrayList<InstructionEntry> instructionEntries = startSymbol.getInstructions();
+//        instructionEntries.add(instructionEntry);
+//        InstructionEntry instructionEntry1 = new InstructionEntry("call", getFuncIndex("main"));
+//        instructionEntries.add(instructionEntry1);
+//        startSymbol.setInstructions(instructionEntries);
+
     }
 
     public void init() throws AnalyzeError {
@@ -318,13 +330,10 @@ public final class Analyser {
         expect(TokenType.FN_KW);
         Token identToken = expect(TokenType.IDENT);
         String funcName = identToken.getValueString();
-
-        if (symbolTable.get(funcName) != null) {
-            throw new AnalyzeError(ErrorCode.ReDefine, identToken.getStartPos());
-        }
         addSymbol(funcName, "func", null, level++, true, true, identToken.getStartPos());
         funcList.add(funcName);
         SymbolEntry funcSymbol = symbolTable.get(funcName);
+        funcSymbol.setGlobal(true);
         expect(TokenType.L_PAREN);
         if (!check(TokenType.R_PAREN)) {
             analyseFunctionParamList(funcName);
@@ -333,9 +342,6 @@ public final class Analyser {
         expect(TokenType.ARROW);
         TokenType type = analyseTy();
         funcSymbol.setType(type);
-        if (type == TokenType.VOID) {
-            allReturn = true;
-        }
 
         if (funcName.equals("main")) {
             hasMainFuc = true;
@@ -345,6 +351,8 @@ public final class Analyser {
         analyseBlockStmt(funcName, false, 0, 0, 0);
 
         if (type == TokenType.VOID) {
+            allReturn = true;
+
             InstructionEntry instructionEntry = new InstructionEntry(("ret"));
             ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
             instructionEntries.add(instructionEntry);
@@ -352,13 +360,14 @@ public final class Analyser {
         }
 
 //        将当前函数中的变量弹出符号表
+        int currentLevel = level;
         Iterator iter = symbolTable.entrySet().iterator();
         while (iter.hasNext()) {
             HashMap.Entry entry = (HashMap.Entry) iter.next();
             String varname = entry.getKey().toString();
             SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
-            if (symbolEntry.getLevel() == level) {
-                if (getGlobalIndex(varname) != -1) {
+            if (symbolEntry.getLevel() == currentLevel&&currentLevel!=0) {
+                if (getGlobalIndex(varname)!=-1) {
                     symbolEntry.setLevel(0);
                     symbolEntry.setGlobal(true);
                     symbolEntry.setKind("var");
@@ -367,12 +376,12 @@ public final class Analyser {
                 }
             }
         }
-        level--;
+        level = currentLevel - 1;
     }
 
 
     //    function_param_list -> function_param (',' function_param)*
-    public void analyseFunctionParamList(String funcName) throws CompileError {
+    public void  analyseFunctionParamList(String funcName) throws CompileError {
         if (check(TokenType.CONST_KW) || check(TokenType.IDENT)) {
             analyseFunctionParam(funcName);
         }
@@ -613,12 +622,15 @@ public final class Analyser {
         ArrayList<String> localVars = funcSymbol.getLocVars();
         ArrayList<InstructionEntry> instructionEntries = funcSymbol.getInstructions();
         InstructionEntry instructionEntry;
+        boolean isGlobal = false;
+        if(level == 0){
+            isGlobal = true;
+            globalVarList.add(identToken.getValueString());
+        }
         if (check(TokenType.ASSIGN)) {
             expect(TokenType.ASSIGN);
             varSymbol.setInitialized(true);
-            if (level == 0) {
-                varSymbol.setGlobal(true);
-                globalVarList.add(identToken.getValueString());
+            if (isGlobal) {
                 instructionEntry = new InstructionEntry("globa", localVars.size());
             } else {
                 instructionEntry = new InstructionEntry("loca", localVars.size());
@@ -631,6 +643,7 @@ public final class Analyser {
             instructionEntries.add(instructionEntry);
             funcSymbol.setInstructions(instructionEntries);
         }
+        varSymbol.setGlobal(isGlobal);
         localVars.add(identToken.getValueString());
         funcSymbol.setLocVars(localVars);
         expect(TokenType.SEMICOLON);

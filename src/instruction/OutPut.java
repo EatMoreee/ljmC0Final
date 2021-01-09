@@ -44,6 +44,13 @@ public class OutPut {
         }
         HashMap<String, SymbolEntry> symbolTable = an.getSymbolTable();
         Iterator iter = symbolTable.entrySet().iterator();
+        while(iter.hasNext()){
+            HashMap.Entry entry = (HashMap.Entry)iter.next();
+            String name = entry.getKey().toString();
+            SymbolEntry symbolEntry = (SymbolEntry) entry.getValue();
+            //SymbolEntry symbolEntry = symbolTable.get(symbolEntryIterator.next());
+            System.out.print(String.format("%s %s %s %d\n", name, symbolEntry.getKind(), symbolEntry.getType(), symbolEntry.getLevel()));
+        }
         int top = 0;
         int trueGlobalVarsCount = 0;
         Global[] globals = new Global[1000];
