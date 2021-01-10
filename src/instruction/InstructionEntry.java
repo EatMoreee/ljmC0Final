@@ -2,7 +2,7 @@ package instruction;
 
 public class InstructionEntry {
     private String ins;
-    private int op = -100010;
+    private int op = -10010;
 
     public InstructionEntry(String ins) {
         this.ins = ins;

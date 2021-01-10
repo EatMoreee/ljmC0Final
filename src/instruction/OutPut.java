@@ -175,7 +175,7 @@ public class OutPut {
                 int intInstru = instruToInt(instructionEntry.getIns());
                 List<Byte> instruByte = int2bytes(1, intInstru);
                 output.addAll(instruByte);
-                if(instructionEntry.getOp() != -100010){
+                if(instructionEntry.getOp() != -10010){
                     int opera = instructionEntry.getOp();
                     if(intInstru == 0x4a){
                         //System.out.println(trueGlobalVarsCount);
